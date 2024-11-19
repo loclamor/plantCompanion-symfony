@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vegetable{% endblock %}
+
+{% block body %}
+    <h1>Vegetable</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ vegetable.id }}</td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td>{{ vegetable.name }}</td>
+            </tr>
+            <tr>
+                <th>CreationDate</th>
+                <td>{{ vegetable.creationDate ? vegetable.creationDate|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>AddDate</th>
+                <td>{{ vegetable.addDate ? vegetable.addDate|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>TypeOrigine</th>
+                <td>{{ vegetable.typeOrigine }}</td>
+            </tr>
+            <tr>
+                <th>NomLatin</th>
+                <td>{{ vegetable.nomLatin }}</td>
+            </tr>
+            <tr>
+                <th>Rusticite</th>
+                <td>{{ vegetable.rusticite }}</td>
+            </tr>
+            <tr>
+                <th>MoisFructiDebut</th>
+                <td>{{ vegetable.moisFructiDebut }}</td>
+            </tr>
+            <tr>
+                <th>MoisFructiFin</th>
+                <td>{{ vegetable.moisFructiFin }}</td>
+            </tr>
+            <tr>
+                <th>MoisFleurDebut</th>
+                <td>{{ vegetable.moisFleurDebut }}</td>
+            </tr>
+            <tr>
+                <th>MoisFleurFin</th>
+                <td>{{ vegetable.moisFleurFin }}</td>
+            </tr>
+            <tr>
+                <th>PFleur</th>
+                <td>{{ vegetable.pFleur }}</td>
+            </tr>
+            <tr>
+                <th>PFructi</th>
+                <td>{{ vegetable.pFructi }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_vegetable_index') }}">back to list</a>
+
+    <a href="{{ path('app_vegetable_edit', {'id': vegetable.id}) }}">edit</a>
+
+    {{ include('vegetable/_delete_form.html.twig') }}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vegetable index{% endblock %}
+
+{% block body %}
+    <h1>Vegetable index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>CreationDate</th>
+                <th>AddDate</th>
+                <th>TypeOrigine</th>
+                <th>NomLatin</th>
+                <th>Rusticite</th>
+                <th>MoisFructiDebut</th>
+                <th>MoisFructiFin</th>
+                <th>MoisFleurDebut</th>
+                <th>MoisFleurFin</th>
+                <th>PFleur</th>
+                <th>PFructi</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for vegetable in vegetables %}
+            <tr>
+                <td>{{ vegetable.id }}</td>
+                <td>{{ vegetable.name }}</td>
+                <td>{{ vegetable.creationDate ? vegetable.creationDate|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ vegetable.addDate ? vegetable.addDate|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ vegetable.typeOrigine }}</td>
+                <td>{{ vegetable.nomLatin }}</td>
+                <td>{{ vegetable.rusticite }}</td>
+                <td>{{ vegetable.moisFructiDebut }}</td>
+                <td>{{ vegetable.moisFructiFin }}</td>
+                <td>{{ vegetable.moisFleurDebut }}</td>
+                <td>{{ vegetable.moisFleurFin }}</td>
+                <td>{{ vegetable.pFleur }}</td>
+                <td>{{ vegetable.pFructi }}</td>
+                <td>
+                    <a href="{{ path('app_vegetable_show', {'id': vegetable.id}) }}">show</a>
+                    <a href="{{ path('app_vegetable_edit', {'id': vegetable.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="14">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_vegetable_new') }}">Create new</a>
+{% endblock %}

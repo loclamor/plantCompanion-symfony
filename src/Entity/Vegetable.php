@@ -38,9 +38,11 @@ class Vegetable
     private ?string $typeOrigine = null;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'porte_greffe')]
     private ?PorteGreffe $porteGreffe = null;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'lieu_origine')]
     private ?Lieu $lieuOrigine = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -72,6 +74,7 @@ class Vegetable
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'default_photo')]
     private ?Photo $defaultPhoto = null;
 
     public function getId(): ?int

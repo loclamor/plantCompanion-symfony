@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Vegetable{% endblock %}
+
+{% block body %}
+    <h1>Create new Vegetable</h1>
+
+    {{ include('vegetable/_form.html.twig') }}
+
+    <a href="{{ path('app_vegetable_index') }}">back to list</a>
+{% endblock %}
