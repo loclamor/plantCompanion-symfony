@@ -1,0 +1,4 @@
+# mapping from bundle name to table prefix
+parameters:
+  table_prefix:
+    entity: plant_
