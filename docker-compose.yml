@@ -1,0 +1,38 @@
+services:
+  php:
+    build:
+      context: ./.docker/php
+    volumes:
+      - ./:/usr/src/app
+    extra_hosts:
+      - "dockerhost:$DOCKERHOST"
+  nginx:
+    build:
+      context: ./.docker/nginx
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "8001:80"
+    depends_on:
+      - php
+  database:
+    image: 'mysql:latest'
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: plantczplantcomp
+      MYSQL_USER: plantczplantcomp
+      MYSQL_PASSWORD: plantczpassword
+    ports:
+      # To allow the host machine to access the ports below, modify the lines below.
+      # For example, to allow the host to connect to port 3306 on the container, you would change
+      # "3306" to "3306:3306". Where the first port is exposed to the host and the second is the container port.
+      # See https://docs.docker.com/compose/compose-file/compose-file-v3/#ports for more information.
+      - '8006:3306'
+    volumes:
+      - ./data/mysql/startup-scripts:/docker-entrypoint-initdb.d
+      - ./data/mysql/utilities:/scripts/
+      - ./data/mysql/databases-folder:/var/lib/mysql:delegated
+      - ./data/mysql/config:/etc/mysql/conf.d
+
+volumes:
+  database_data:
