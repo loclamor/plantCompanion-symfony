@@ -5,7 +5,7 @@ services:
     volumes:
       - ./:/usr/src/app
     extra_hosts:
-      - "dockerhost:$DOCKERHOST"
+      - host.docker.internal:host-gateway
   nginx:
     build:
       context: ./.docker/nginx
