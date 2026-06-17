@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Lieu;
+use App\Entity\Utilisateur;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,6 +15,20 @@ class LieuRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Lieu::class);
+    }
+
+    /**
+     * @return Lieu[] Les lieux du seul utilisateur donné.
+     */
+    public function findByUser(Utilisateur $user): array
+    {
+        return $this->createQueryBuilder('l')
+            ->andWhere('l.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('l.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
     }
 
     //    /**

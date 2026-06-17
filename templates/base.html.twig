@@ -23,6 +23,17 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ path('app_vegetable_index') }}">Plantes</a>
                         </li>
+                        {% if app.user %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarParametrage" role="button" data-bs-toggle="dropdown" aria-expanded="false">Paramétrage</a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarParametrage">
+                                    <li><a class="dropdown-item" href="{{ path('app_type_index') }}">Types</a></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_porte_greffe_index') }}">Porte-greffes</a></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_group_index') }}">Groupes</a></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_lieu_index') }}">Lieux</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
                     </ul>
                     <ul class="navbar-nav">
                         {% if app.user %}

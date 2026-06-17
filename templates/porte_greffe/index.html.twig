@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Porte-greffes{% endblock %}
+
+{% block body %}
+    <h1>Porte-greffes</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for porte_greffe in porte_greffes %}
+            <tr>
+                <td>{{ porte_greffe.id }}</td>
+                <td>{{ porte_greffe.name }}</td>
+                <td>{{ porte_greffe.type ? porte_greffe.type.name : '' }}</td>
+                <td>
+                    <a href="{{ path('app_porte_greffe_show', {'id': porte_greffe.id}) }}">Voir</a>
+                    <a href="{{ path('app_porte_greffe_edit', {'id': porte_greffe.id}) }}">Modifier</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">Aucun enregistrement</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_porte_greffe_new') }}">Créer</a>
+{% endblock %}

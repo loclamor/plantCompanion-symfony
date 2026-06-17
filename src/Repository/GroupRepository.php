@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Group;
+use App\Entity\Utilisateur;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,6 +15,20 @@ class GroupRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Group::class);
+    }
+
+    /**
+     * @return Group[] Les groupes du seul utilisateur donné.
+     */
+    public function findByUser(Utilisateur $user): array
+    {
+        return $this->createQueryBuilder('g')
+            ->andWhere('g.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('g.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
     }
 
     //    /**

@@ -39,17 +39,18 @@ Note env : `composer install` + dev `symfony/browser-kit`, `symfony/css-selector
 
 ---
 
-## Phase 1 — CRUDs simples (réplique patron Vegetable durci)
+## Phase 1 — CRUDs simples (réplique patron Vegetable durci) ✅
 
-Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (`make bash` → `bin/console make:crud`, puis adapter) :
-- [ ] scoping `findByUser` dans chaque repository
-- [ ] `OwnerVoter` sur show/edit/delete
-- [ ] `utilisateur` auto-rempli (hors formulaire)
-- [ ] `choice_label: 'name'` + `EntityType` filtrés par user
-- [ ] hiérarchies `Type.parent`, `Group.parent` filtrées (exclure soi-même en édition)
-- [ ] `PorteGreffe.type` (ManyToOne) filtré
-- [ ] liens navbar « Paramétrage » dans `templates/base.html.twig`
-- [ ] tests contrôleur basiques (auth + accès) par entité
+Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Vegetable) :
+- [x] scoping `findByUser` dans chaque repository
+- [x] `OwnerVoter` sur show/edit/delete
+- [x] `utilisateur` auto-rempli (hors formulaire)
+- [x] `choice_label: 'name'` + `EntityType` filtrés par user
+- [x] hiérarchies `Type.parent`, `Group.parent` filtrées (exclure soi-même en édition)
+- [x] `PorteGreffe.type` (ManyToOne) filtré
+- [x] liens navbar « Paramétrage » dans `templates/base.html.twig`
+- [x] tests contrôleur (auth requise) : `tests/Controller/ParametrageControllerTest.php` (data provider, 12 cas)
+- [x] vérifié : 20 routes enregistrées, lint PHP + Twig OK, suite 19/20 verte (seul échec = login pré-existant)
 
 ## Phase 2 — Action (interventions) + historique
 

@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Porte-greffe{% endblock %}
+
+{% block body %}
+    <h1>Porte-greffe</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ porte_greffe.id }}</td>
+            </tr>
+            <tr>
+                <th>Nom</th>
+                <td>{{ porte_greffe.name }}</td>
+            </tr>
+            <tr>
+                <th>Type</th>
+                <td>{{ porte_greffe.type ? porte_greffe.type.name : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_porte_greffe_index') }}">Retour à la liste</a>
+
+    <a href="{{ path('app_porte_greffe_edit', {'id': porte_greffe.id}) }}">Modifier</a>
+
+    {{ include('porte_greffe/_delete_form.html.twig') }}
+{% endblock %}
