@@ -7,6 +7,7 @@ use App\Entity\Utilisateur;
 use App\Form\GroupType;
 use App\Repository\GroupRepository;
 use App\Security\Voter\OwnerVoter;
+use App\Service\CurrentGroup;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,6 +50,34 @@ final class GroupController extends AbstractController
         return $this->render('group/new.html.twig', [
             'group' => $group,
             'form' => $form,
+        ]);
+    }
+
+    #[Route('/select', name: 'app_group_select', methods: ['POST'])]
+    public function select(Request $request, CurrentGroup $currentGroup): Response
+    {
+        if ($this->isCsrfTokenValid('select_group', $request->getPayload()->getString('_token'))) {
+            $id = $request->getPayload()->getInt('group');
+            $currentGroup->set($id > 0 ? $id : null);
+        }
+
+        return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('app_vegetable_index'));
+    }
+
+    /**
+     * Fragment du sélecteur de groupe courant pour la navbar (rendu via render(controller(...))).
+     */
+    public function navSelector(GroupRepository $groupRepository, CurrentGroup $currentGroup): Response
+    {
+        /** @var Utilisateur|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return new Response('');
+        }
+
+        return $this->render('group/_nav_selector.html.twig', [
+            'groups' => $groupRepository->findByUser($user),
+            'current_id' => $currentGroup->getId(),
         ]);
     }
 

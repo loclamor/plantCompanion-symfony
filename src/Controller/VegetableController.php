@@ -7,9 +7,11 @@ use App\Entity\Vegetable;
 use App\Form\VegetableType;
 use App\Repository\ActionRepository;
 use App\Repository\PhotoRepository;
+use App\Repository\TypeRepository;
 use App\Repository\VegetableHistoryRepository;
 use App\Repository\VegetableRepository;
 use App\Security\Voter\OwnerVoter;
+use App\Service\CurrentGroup;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,14 +21,71 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/vegetable')]
 final class VegetableController extends AbstractController
 {
+    private const PAGE_SIZE = 12;
+
     #[Route(name: 'app_vegetable_index', methods: ['GET'])]
-    public function index(VegetableRepository $vegetableRepository): Response
+    public function index(Request $request, VegetableRepository $vegetableRepository, TypeRepository $typeRepository, CurrentGroup $currentGroup): Response
     {
         /** @var Utilisateur $user */
         $user = $this->getUser();
+        $session = $request->getSession();
+
+        $defaults = ['q' => '', 'type' => null, 'sort' => 'name', 'dir' => 'asc'];
+        /** @var array{q: string, type: ?int, sort: string, dir: string} $filters */
+        $filters = $session->get('vegetable_filters', $defaults);
+
+        if ($request->query->getBoolean('reset')) {
+            $filters = $defaults;
+        } else {
+            if ($request->query->has('q')) {
+                $filters['q'] = trim($request->query->getString('q'));
+            }
+            if ($request->query->has('type')) {
+                $filters['type'] = $request->query->getInt('type') ?: null;
+            }
+            if ($request->query->has('sort')) {
+                $filters['sort'] = $request->query->getString('sort');
+            }
+            if ($request->query->has('dir')) {
+                $filters['dir'] = $request->query->getString('dir');
+            }
+        }
+        $session->set('vegetable_filters', $filters);
+
+        $group = $currentGroup->resolve($user);
+
+        $type = null;
+        if (null !== $filters['type']) {
+            $type = $typeRepository->find($filters['type']);
+            if (null === $type || $type->getUtilisateur() !== $user) {
+                $type = null;
+            }
+        }
+
+        $page = max(1, $request->query->getInt('page', 1));
+        $total = $vegetableRepository->countByUserFiltered($user, $group, $filters['q'], $type);
+        $pages = max(1, (int) ceil($total / self::PAGE_SIZE));
+        $page = min($page, $pages);
+
+        $vegetables = $vegetableRepository->findByUserFiltered(
+            $user,
+            $group,
+            $filters['q'],
+            $type,
+            $filters['sort'],
+            $filters['dir'],
+            self::PAGE_SIZE,
+            ($page - 1) * self::PAGE_SIZE,
+        );
 
         return $this->render('vegetable/index.html.twig', [
-            'vegetables' => $vegetableRepository->findByUser($user),
+            'vegetables' => $vegetables,
+            'types' => $typeRepository->findByUser($user),
+            'filters' => $filters,
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+            'current_group' => $group,
         ]);
     }
 

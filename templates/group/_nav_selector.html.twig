@@ -1,0 +1,9 @@
+<form method="post" action="{{ path('app_group_select') }}" class="d-flex">
+    <input type="hidden" name="_token" value="{{ csrf_token('select_group') }}">
+    <select name="group" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="0">Tous les groupes</option>
+        {% for group in groups %}
+            <option value="{{ group.id }}" {{ current_id == group.id ? 'selected' : '' }}>{{ group.name }}</option>
+        {% endfor %}
+    </select>
+</form>

@@ -78,12 +78,17 @@ Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Ve
 - [x] vérifié : lint PHP + Twig (41 fichiers) OK, génération d'URL Liip OK, suite 24/25 verte (seul échec = login pré-existant)
 - À noter (reporté) : upload JS avancé (drag-drop/preview) non repris ; vérification end-to-end de l'upload réel (fichier + thumbnail) → Phase 5 (fixtures + utilisateur authentifié)
 
-## Phase 4 — Features avancées (parité legacy)
+## Phase 4 — Features avancées (parité legacy) ✅
 
-- [ ] sélecteur de groupe courant en navbar (session) + filtrage plantes/actions
-- [ ] liste plantes : recherche nom, filtre type, tri (création/ajout/nom/rusticité), pagination, filtres persistés en session (`knp-paginator-bundle` ou maison)
-- [ ] `CalendarController` fructification (floraison vert / récolte orange + micro-grille observations)
-- [ ] `PrintController::bytype` (cartes A4, CSS `@media print`)
+- [x] sélecteur de groupe courant : service `CurrentGroup` (session), `GroupController::select` (`/group/select`) + fragment `navSelector` rendu dans la navbar via `render(controller(...))`
+- [x] liste plantes : recherche nom, filtre type, tri (nom/création/ajout/rusticité), **pagination maison** (12/page), filtres persistés en session (`vegetable_filters`, + `?reset=1`) ; `VegetableRepository::findByUserFiltered()`/`countByUserFiltered()` (tri en liste blanche `SORTABLE`)
+- [x] filtrage de la liste par groupe courant
+- [x] `CalendarController::fructification` (`/calendar/fructification`) : tableau 12 mois, floraison (vert) / récolte (orange) / les deux (bleu), calcul des intervalles avec passage d'année
+- [x] `PrintController::byType` (`/print/bytype`) : sélection d'un type, cartes ~9.5cm, CSS `@media print` + bouton imprimer
+- [x] liens navbar : Calendrier, Impression + sélecteur de groupe
+- [x] tests `AdvancedFeaturesControllerTest` (auth requise calendrier/impression)
+- [x] vérifié : lint PHP + Twig (44 fichiers) OK, routes enregistrées, suite 26/27 verte (seul échec = login pré-existant)
+- À noter (reporté/simplifié) : micro-grille des observations du calendrier non reprise (cœur floraison/récolte fait) ; vérification e2e authentifiée (filtres/groupe/calendrier avec données) → Phase 5
 
 ## Phase 5 — Tests & finition
 
