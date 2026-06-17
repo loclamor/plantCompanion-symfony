@@ -24,6 +24,11 @@
                             <a class="nav-link" href="{{ path('app_vegetable_index') }}">Plantes</a>
                         </li>
                         {% if app.user %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_action_index') }}">Interventions</a>
+                            </li>
+                        {% endif %}
+                        {% if app.user %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarParametrage" role="button" data-bs-toggle="dropdown" aria-expanded="false">Paramétrage</a>
                                 <ul class="dropdown-menu" aria-labelledby="navbarParametrage">

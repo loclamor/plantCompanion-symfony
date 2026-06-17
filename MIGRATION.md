@@ -52,12 +52,17 @@ Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Ve
 - [x] tests contrôleur (auth requise) : `tests/Controller/ParametrageControllerTest.php` (data provider, 12 cas)
 - [x] vérifié : 20 routes enregistrées, lint PHP + Twig OK, suite 19/20 verte (seul échec = login pré-existant)
 
-## Phase 2 — Action (interventions) + historique
+## Phase 2 — Action (interventions) + historique ✅
 
-- [ ] CRUD `Action` : sélection `Vegetable` (filtrée user), `typeAction` (ChoiceType : observation/ajout_engrais/taille/rempotage/ceuillette), `title` liste si observation (Fleurs/Fruits/Maladie/Auxiliaire/Ravageur/nouvelle_feuille) sinon libre, `date`, `comment`
-- [ ] constantes de valeurs sur l'entité `Action`
-- [ ] EventSubscriber Doctrine (`preUpdate`/`onFlush`) → `VegetableHistory` par champ modifié
-- [ ] affichage historique dans `vegetable/show.html.twig`
+- [x] CRUD `Action` : sélection `Vegetable` (filtrée user), `typeAction` (ChoiceType), `date`, `title`, `comment` ; scoping + OwnerVoter + CSRF
+- [x] constantes `Action::TYPES_ACTION` et `Action::TITRES_OBSERVATION`
+- [x] `ActionRepository::findByUser()` + `findByVegetable()`
+- [x] listener Doctrine `VegetableHistoryListener` (`preUpdate` collecte le changeset, `postFlush` persiste un `VegetableHistory` par champ ; formatage null/date/bool/objet ; garde anti-réentrance)
+- [x] affichage interventions + historique dans `vegetable/show.html.twig` (`VegetableHistoryRepository::findByVegetable`)
+- [x] navbar : lien « Interventions »
+- [x] tests `ActionControllerTest` (auth requise)
+- [x] vérifié : 5 routes Action, listener taggé preUpdate+postFlush, lint PHP+Twig OK, suite 22/23 verte
+- À noter (reporté) : `title` est un champ libre ; le dropdown conditionnel « si observation » nécessite du JS (sans bundler) → polish ultérieur. Vérification end-to-end de l'historique (création user + édition) à couvrir en Phase 5 avec fixtures.
 
 ## Phase 3 — Photos (VichUploaderBundle + LiipImagineBundle)
 
