@@ -6,7 +6,7 @@ use App\Repository\TypeRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TypeRepository::class)]
-class Type
+class Type implements UserOwnedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -22,6 +22,11 @@ class Type
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 
     public function getId(): ?int
     {

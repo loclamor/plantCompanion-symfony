@@ -6,7 +6,7 @@ use App\Repository\PorteGreffeRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PorteGreffeRepository::class)]
-class PorteGreffe
+class PorteGreffe implements UserOwnedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -23,6 +23,11 @@ class PorteGreffe
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 
     public function getId(): ?int
     {

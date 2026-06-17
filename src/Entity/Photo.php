@@ -6,7 +6,7 @@ use App\Repository\PhotoRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
-class Photo
+class Photo implements UserOwnedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -26,6 +26,11 @@ class Photo
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
+
+    public function __toString(): string
+    {
+        return $this->path ?? '';
+    }
 
     public function getId(): ?int
     {

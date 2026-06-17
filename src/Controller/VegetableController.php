@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\Utilisateur;
 use App\Entity\Vegetable;
 use App\Form\VegetableType;
 use App\Repository\VegetableRepository;
+use App\Security\Voter\OwnerVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,15 +19,25 @@ final class VegetableController extends AbstractController
     #[Route(name: 'app_vegetable_index', methods: ['GET'])]
     public function index(VegetableRepository $vegetableRepository): Response
     {
+        /** @var Utilisateur $user */
+        $user = $this->getUser();
+
         return $this->render('vegetable/index.html.twig', [
-            'vegetables' => $vegetableRepository->findAll(),
+            'vegetables' => $vegetableRepository->findByUser($user),
         ]);
     }
 
     #[Route('/new', name: 'app_vegetable_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
+        /** @var Utilisateur $user */
+        $user = $this->getUser();
+
         $vegetable = new Vegetable();
+        $vegetable->setUtilisateur($user);
+        $vegetable->setCreationDate(new \DateTime());
+        $vegetable->setAddDate(new \DateTime());
+
         $form = $this->createForm(VegetableType::class, $vegetable);
         $form->handleRequest($request);
 
@@ -45,6 +57,8 @@ final class VegetableController extends AbstractController
     #[Route('/{id}', name: 'app_vegetable_show', methods: ['GET'])]
     public function show(Vegetable $vegetable): Response
     {
+        $this->denyAccessUnlessGranted(OwnerVoter::VIEW, $vegetable);
+
         return $this->render('vegetable/show.html.twig', [
             'vegetable' => $vegetable,
         ]);
@@ -53,6 +67,8 @@ final class VegetableController extends AbstractController
     #[Route('/{id}/edit', name: 'app_vegetable_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Vegetable $vegetable, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted(OwnerVoter::EDIT, $vegetable);
+
         $form = $this->createForm(VegetableType::class, $vegetable);
         $form->handleRequest($request);
 
@@ -71,6 +87,8 @@ final class VegetableController extends AbstractController
     #[Route('/{id}', name: 'app_vegetable_delete', methods: ['POST'])]
     public function delete(Request $request, Vegetable $vegetable, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted(OwnerVoter::DELETE, $vegetable);
+
         if ($this->isCsrfTokenValid('delete'.$vegetable->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($vegetable);
             $entityManager->flush();

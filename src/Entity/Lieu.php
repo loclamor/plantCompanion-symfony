@@ -6,7 +6,7 @@ use App\Repository\LieuRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LieuRepository::class)]
-class Lieu
+class Lieu implements UserOwnedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -19,6 +19,11 @@ class Lieu
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 
     public function getId(): ?int
     {
