@@ -20,7 +20,8 @@ final class PrintController extends AbstractController
         $user = $this->getUser();
 
         $type = null;
-        $typeId = $request->query->getInt('type');
+        $typeRaw = $request->query->get('type');
+        $typeId = ('' !== $typeRaw && null !== $typeRaw) ? (int) $typeRaw : 0;
         if ($typeId > 0) {
             $type = $typeRepository->find($typeId);
             if (null === $type || $type->getUtilisateur() !== $user) {

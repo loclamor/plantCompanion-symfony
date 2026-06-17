@@ -22,6 +22,19 @@ class AuthenticatedVegetableTest extends DatabaseTestCase
         $this->assertSelectorTextNotContains('body', 'Courgette Bob');
     }
 
+    public function testFilterFormWithEmptyTypeDoesNotError(): void
+    {
+        $alice = $this->createUser('alice');
+        $this->createVegetable($alice, 'Tomate');
+
+        $this->client->loginUser($alice);
+        // Reproduit la soumission du formulaire de recherche (type vide = "Tous les types").
+        $this->client->request('GET', '/vegetable?q=Tom&type=&sort=name&dir=asc');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('body', 'Tomate');
+    }
+
     public function testCannotShowOthersVegetable(): void
     {
         $alice = $this->createUser('alice');

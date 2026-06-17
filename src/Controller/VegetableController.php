@@ -41,7 +41,8 @@ final class VegetableController extends AbstractController
                 $filters['q'] = trim($request->query->getString('q'));
             }
             if ($request->query->has('type')) {
-                $filters['type'] = $request->query->getInt('type') ?: null;
+                $typeRaw = $request->query->get('type');
+                $filters['type'] = ('' !== $typeRaw && null !== $typeRaw) ? (int) $typeRaw : null;
             }
             if ($request->query->has('sort')) {
                 $filters['sort'] = $request->query->getString('sort');
