@@ -9,6 +9,7 @@
         <thead>
             <tr>
                 <th>Id</th>
+                <th>Photo</th>
                 <th>Name</th>
                 <th>CreationDate</th>
                 <th>AddDate</th>
@@ -28,6 +29,11 @@
         {% for vegetable in vegetables %}
             <tr>
                 <td>{{ vegetable.id }}</td>
+                <td>
+                    {% if vegetable.defaultPhoto and vegetable.defaultPhoto.relativePath %}
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo" height="48">
+                    {% endif %}
+                </td>
                 <td>{{ vegetable.name }}</td>
                 <td>{{ vegetable.creationDate ? vegetable.creationDate|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ vegetable.addDate ? vegetable.addDate|date('Y-m-d H:i:s') : '' }}</td>
@@ -47,7 +53,7 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="14">no records found</td>
+                <td colspan="15">no records found</td>
             </tr>
         {% endfor %}
         </tbody>

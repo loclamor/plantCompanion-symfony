@@ -64,14 +64,19 @@ Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Ve
 - [x] vérifié : 5 routes Action, listener taggé preUpdate+postFlush, lint PHP+Twig OK, suite 22/23 verte
 - À noter (reporté) : `title` est un champ libre ; le dropdown conditionnel « si observation » nécessite du JS (sans bundler) → polish ultérieur. Vérification end-to-end de l'historique (création user + édition) à couvrir en Phase 5 avec fixtures.
 
-## Phase 3 — Photos (VichUploaderBundle + LiipImagineBundle)
+## Phase 3 — Photos (VichUploaderBundle + LiipImagineBundle) ✅
 
-- [ ] `composer require vich/uploader-bundle liip/imagine-bundle` + config (répertoire compatible `Photo.path` legacy, filtres = tailles minH/minW)
-- [ ] `Photo` Vich (`#[Vich\Uploadable]`, champ fichier non mappé, conserver `path`)
-- [ ] `PhotoController` : upload simple/multiple, liaison Vegetable/Action, suppression (fichier + thumbnails), photo par défaut (`Vegetable.defaultPhoto`)
-- [ ] EXIF : date de prise → pré-remplir date action (confort, en fin de phase)
-- [ ] affichage : carousel `show`, miniature + badge nb photos `index`, thumbnails LiipImagine
-- Note : pas de bundler JS → upload serveur classique d'abord, JS avancé ensuite
+- [x] `composer require vich/uploader-bundle liip/imagine-bundle` (+ `symfony/asset`, requis par le thème de formulaire Vich) ; bundles enregistrés à la main dans `config/bundles.php` (recipes contrib ignorées : `allow-contrib: false`)
+- [x] Stockage : Vich écrit dans `./uploads` (racine, partagé legacy), exposé via symlink `public/uploads -> ../uploads` ; `config/packages/vich_uploader.yaml` (mapping `photo`, `SmartUniqueNamer`, `delete_on_remove`)
+- [x] `Photo` : `#[Vich\Uploadable]` + `imageFile` (non persisté, `fileNameProperty: path`) + `getRelativePath()` (normalise legacy `./uploads/...` et nouveaux fichiers → `uploads/...`). **Aucune migration** (champ Vich non mappé en BD, colonne `path` conservée)
+- [x] `config/packages/liip_imagine.yaml` (driver gd, filtres `plant_thumb`/`plant_large`, `twig.mode: lazy`) + import routing `config/routes/liip_imagine.yaml`
+- [x] `PhotoController` : upload simple (`/photo/new`, pré-sélection `?vegetable=`), upload multiple (`/photo/upload-multiple`), suppression (Vich `delete_on_remove` + purge cache Liip + dénoue defaultPhoto), photo par défaut (`/photo/{id}/default`)
+- [x] `PhotoType` (VichImageType, vegetable/action filtrés) ; `PhotoRepository::findByVegetable()`/`findByUser()`
+- [x] EXIF serveur optionnel : `ExifDateExtractor` (gardé si extension absente), flash de la date détectée ; `exif` ajouté au Dockerfile (rebuild requis)
+- [x] Affichage : galerie + boutons (défaut/supprimer) dans `vegetable/show.html.twig`, vignette par défaut dans `vegetable/index.html.twig`. Thumbnails Liip via `path('liip_imagine_filter', …)` (la fonction Twig `imagine_filter` n'est pas exploitable dans cette version → route + `path()`, lint-clean + runtime garanti)
+- [x] tests `PhotoControllerTest` ; correction dépréciation `Length` (arguments nommés) dans `RegistrationFormType`
+- [x] vérifié : lint PHP + Twig (41 fichiers) OK, génération d'URL Liip OK, suite 24/25 verte (seul échec = login pré-existant)
+- À noter (reporté) : upload JS avancé (drag-drop/preview) non repris ; vérification end-to-end de l'upload réel (fichier + thumbnail) → Phase 5 (fixtures + utilisateur authentifié)
 
 ## Phase 4 — Features avancées (parité legacy)
 

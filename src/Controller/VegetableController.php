@@ -6,6 +6,7 @@ use App\Entity\Utilisateur;
 use App\Entity\Vegetable;
 use App\Form\VegetableType;
 use App\Repository\ActionRepository;
+use App\Repository\PhotoRepository;
 use App\Repository\VegetableHistoryRepository;
 use App\Repository\VegetableRepository;
 use App\Security\Voter\OwnerVoter;
@@ -57,12 +58,13 @@ final class VegetableController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_vegetable_show', methods: ['GET'])]
-    public function show(Vegetable $vegetable, ActionRepository $actionRepository, VegetableHistoryRepository $historyRepository): Response
+    public function show(Vegetable $vegetable, ActionRepository $actionRepository, VegetableHistoryRepository $historyRepository, PhotoRepository $photoRepository): Response
     {
         $this->denyAccessUnlessGranted(OwnerVoter::VIEW, $vegetable);
 
         return $this->render('vegetable/show.html.twig', [
             'vegetable' => $vegetable,
+            'photos' => $photoRepository->findByVegetable($vegetable),
             'actions' => $actionRepository->findByVegetable($vegetable),
             'histories' => $historyRepository->findByVegetable($vegetable),
         ]);

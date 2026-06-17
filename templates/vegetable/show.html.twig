@@ -68,6 +68,39 @@
 
     {{ include('vegetable/_delete_form.html.twig') }}
 
+    <h2 class="mt-4">Photos</h2>
+    <p>
+        <a class="btn btn-sm btn-primary" href="{{ path('app_photo_new', {'vegetable': vegetable.id}) }}">Ajouter une photo</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_photo_upload_multiple') }}">Ajouter plusieurs photos</a>
+    </p>
+    <div class="row">
+        {% for photo in photos %}
+            <div class="col-md-3 mb-3">
+                <div class="card {{ vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id ? 'border-success' : '' }}">
+                    {% if photo.relativePath %}
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: photo.relativePath}) }}" class="card-img-top" alt="photo">
+                    {% endif %}
+                    <div class="card-body p-2">
+                        {% if vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id %}
+                            <span class="badge bg-success">Photo par défaut</span>
+                        {% else %}
+                            <form method="post" action="{{ path('app_photo_set_default', {'id': photo.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('default' ~ photo.id) }}">
+                                <button class="btn btn-sm btn-outline-secondary">Définir par défaut</button>
+                            </form>
+                        {% endif %}
+                        <form method="post" action="{{ path('app_photo_delete', {'id': photo.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer cette photo ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ photo.id) }}">
+                            <button class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Aucune photo.</p>
+        {% endfor %}
+    </div>
+
     <h2 class="mt-4">Interventions</h2>
     <table class="table">
         <thead>

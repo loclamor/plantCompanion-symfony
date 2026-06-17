@@ -4,10 +4,20 @@ namespace App\Entity;
 
 use App\Repository\PhotoRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
+#[Vich\Uploadable]
 class Photo implements UserOwnedInterface
 {
+    /**
+     * Fichier uploadé (non persisté). Vich renseigne automatiquement $path
+     * (nom de fichier généré) lors du flush.
+     */
+    #[Vich\UploadableField(mapping: 'photo', fileNameProperty: 'path')]
+    private ?File $imageFile = null;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -30,6 +40,34 @@ class Photo implements UserOwnedInterface
     public function __toString(): string
     {
         return $this->path ?? '';
+    }
+
+    public function setImageFile(?File $imageFile = null): void
+    {
+        $this->imageFile = $imageFile;
+    }
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    /**
+     * Chemin relatif normalisé sous public/ (ex. "uploads/xxx.jpg"), utilisable
+     * avec asset()/Liip. Gère les chemins legacy ("./uploads/12/foo.jpg") comme
+     * les nouveaux fichiers Vich (nom de fichier seul).
+     */
+    public function getRelativePath(): ?string
+    {
+        if (null === $this->path || '' === $this->path) {
+            return null;
+        }
+
+        if (str_contains($this->path, '/')) {
+            return ltrim(str_replace('./', '', $this->path), '/');
+        }
+
+        return 'uploads/'.$this->path;
     }
 
     public function getId(): ?int

@@ -1,0 +1,16 @@
+liip_imagine:
+    driver: gd
+    # Mode "lazy" : enregistre imagine_filter via un runtime Twig (évite la
+    # FilterExtension dépréciée, dont getFunctions() est vide en 2.17).
+    twig:
+        mode: lazy
+    # Les originaux sont résolus sous public/ (donc public/uploads -> ../uploads).
+    filter_sets:
+        # Vignette pour les listes / galeries
+        plant_thumb:
+            filters:
+                thumbnail: { size: [250, 250], mode: inset }
+        # Image moyenne pour la fiche / le carousel
+        plant_large:
+            filters:
+                thumbnail: { size: [900, 900], mode: inset }

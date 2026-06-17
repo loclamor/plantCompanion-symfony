@@ -1,5 +1,10 @@
 .idea
 /data/mysql/databases-folder/
+
+###> liip/imagine-bundle ###
+/public/media/cache/
+###< liip/imagine-bundle ###
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
