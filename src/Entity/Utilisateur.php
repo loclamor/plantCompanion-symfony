@@ -22,9 +22,11 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $name = null;
 
     /**
-     * @var list<string> The user roles
+     * Rôles non persistés : la table legacy `plant_utilisateur` (base partagée)
+     * ne possède pas de colonne `roles`. getRoles() garantit ROLE_USER.
+     *
+     * @var list<string>
      */
-    #[ORM\Column]
     private array $roles = [];
 
     /**
