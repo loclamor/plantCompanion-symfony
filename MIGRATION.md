@@ -90,12 +90,16 @@ Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Ve
 - [x] vérifié : lint PHP + Twig (44 fichiers) OK, routes enregistrées, suite 26/27 verte (seul échec = login pré-existant)
 - À noter (reporté/simplifié) : micro-grille des observations du calendrier non reprise (cœur floraison/récolte fait) ; vérification e2e authentifiée (filtres/groupe/calendrier avec données) → Phase 5
 
-## Phase 5 — Tests & finition
+## Phase 5 — Tests & finition ✅
 
-- [ ] tests contrôleur avec utilisateur authentifié (fixtures / `loginUser()`) — corrige `testLoginWithValidCredentials` (échec connu)
-- [ ] tests de scoping (un user ne voit pas les données d'un autre)
-- [ ] tests CRUD + historique
-- [ ] cibles `make test-action`, `make test-type`, etc.
+- [x] **Base de test isolée SQLite** (`.env.test` → `DATABASE_URL=sqlite:///…/var/test.db`) : ne touche jamais le MySQL legacy. Découverte : aucune BD n'était connectée en test (placeholder PostgreSQL) — d'où l'échec historique de `testLoginWithValidCredentials`
+- [x] `tests/DatabaseTestCase.php` : recrée le schéma (SchemaTool) avant chaque test + helpers `createUser()`/`createVegetable()`
+- [x] `AuthenticationTest` : login form avec utilisateur réel (corrige l'échec historique) + identifiants invalides
+- [x] `AuthenticatedVegetableTest` : la liste ne montre que ses plantes, **scoping** (403 sur la plante d'autrui), **historique** créé à l'édition HTTP
+- [x] `PhotoUploadTest` : upload réel → `Photo` persistée + fichier présent sur le disque (`getRelativePath`)
+- [x] cibles `make test-auth`, `test-parametrage`, `test-action`, `test-photo`, `test-advanced` (+ `test-vegetable` étendu)
+- [x] finitions : `default_target_path: app_vegetable_index` (login redirigeait vers `/` → 404) ; `#[\Deprecated]` sur `Utilisateur::eraseCredentials()` (déprécié SF 7.3)
+- [x] **suite complète : 32 tests, 68 assertions, 0 échec**
 
 ---
 

@@ -15,21 +15,8 @@ class SecurityControllerTest extends WebTestCase
         $this->assertSelectorTextContains('h1', 'Please sign in');
     }
 
-    public function testLoginWithValidCredentials(): void
-    {
-        $client = static::createClient();
-        $crawler = $client->request('GET', '/login');
-
-        $form = $crawler->selectButton('Sign in')->form();
-        $form['_username'] = 'testuser';
-        $form['_password'] = 'testpassword';
-
-        $client->submit($form);
-
-        // This will fail until we have a real user in the database
-        // For now, we just check that the form submission works
-        $this->assertTrue($client->getResponse()->isRedirection());
-    }
+    // testLoginWithValidCredentials est désormais couvert par AuthenticationTest
+    // (avec un utilisateur réel en base de test).
 
     public function testLogout(): void
     {
