@@ -103,6 +103,12 @@ Pour `Type`, `Group`, `Lieu`, `PorteGreffe` (écrits à la main sur le patron Ve
 
 ---
 
+## Tâches restantes / dette technique
+
+- [ ] **Encodage UTF-8** : la base est dans un état « latin1-dans-colonne-utf8mb4 » (double-encodage hérité du legacy, qui se connecte en latin1, ex. id 130 « Yuzu d'été » stocké `C3 83 C2 A9`). Workaround actuel : `charset=latin1` dans `.env.local` (aligné sur le legacy). À migrer proprement **quand le legacy sera retiré** : convertir les colonnes texte (`CONVERT(CAST(CONVERT(col USING latin1) AS BINARY) USING utf8mb4)`) puis repasser la connexion en `utf8mb4`.
+- [ ] Polish reportés des phases : dropdown conditionnel `title` (Action, observation), upload JS drag-drop/preview, micro-grille des observations du calendrier.
+- [ ] Récupérer les fichiers images (`./uploads`) correspondant aux lignes `plant_photo` (le dump ne contient que la BD).
+
 ## Précaution transverse — migrations Doctrine
 
 Dossier `migrations/` vide (schéma géré par le legacy). Avant toute migration : `bin/console doctrine:migrations:diff` puis **relire le diff** — rien de destructif pour le legacy (BD partagée). Nouvelles colonnes (ex. Vich) → nullable / rétrocompatibles. Jamais renommer/supprimer table ou colonne utilisée par l'ancien projet.
