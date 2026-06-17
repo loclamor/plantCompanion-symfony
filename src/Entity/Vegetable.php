@@ -7,7 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VegetableRepository::class)]
-class Vegetable
+class Vegetable implements UserOwnedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -76,6 +76,11 @@ class Vegetable
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'default_photo')]
     private ?Photo $defaultPhoto = null;
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 
     public function getId(): ?int
     {

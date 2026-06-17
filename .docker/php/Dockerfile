@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     libxslt1-dev \
     acl
 
-RUN docker-php-ext-install zip intl gd pdo_mysql
+RUN docker-php-ext-install zip intl gd pdo_mysql exif
 
 RUN pecl install pcov && docker-php-ext-enable pcov
 

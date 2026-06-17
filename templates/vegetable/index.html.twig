@@ -1,26 +1,56 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Vegetable index{% endblock %}
+{% block title %}Plantes{% endblock %}
 
 {% block body %}
-    <h1>Vegetable index</h1>
+    <h1>Plantes</h1>
+
+    {% if current_group %}
+        <p class="text-muted">Groupe courant : <strong>{{ current_group.name }}</strong></p>
+    {% endif %}
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-auto">
+            <input type="text" name="q" value="{{ filters.q }}" class="form-control" placeholder="Rechercher un nom">
+        </div>
+        <div class="col-auto">
+            <select name="type" class="form-select">
+                <option value="">Tous les types</option>
+                {% for type in types %}
+                    <option value="{{ type.id }}" {{ filters.type == type.id ? 'selected' : '' }}>{{ type.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="sort" class="form-select">
+                <option value="name" {{ filters.sort == 'name' ? 'selected' : '' }}>Nom</option>
+                <option value="creationDate" {{ filters.sort == 'creationDate' ? 'selected' : '' }}>Date de création</option>
+                <option value="addDate" {{ filters.sort == 'addDate' ? 'selected' : '' }}>Date d'ajout</option>
+                <option value="rusticite" {{ filters.sort == 'rusticite' ? 'selected' : '' }}>Rusticité</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="dir" class="form-select">
+                <option value="asc" {{ filters.dir == 'asc' ? 'selected' : '' }}>Croissant</option>
+                <option value="desc" {{ filters.dir == 'desc' ? 'selected' : '' }}>Décroissant</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary">Filtrer</button>
+            <a class="btn btn-outline-secondary" href="{{ path('app_vegetable_index', {'reset': 1}) }}">Réinitialiser</a>
+        </div>
+    </form>
+
+    <p class="text-muted">{{ total }} plante(s)</p>
 
     <table class="table">
         <thead>
             <tr>
                 <th>Id</th>
+                <th>Photo</th>
                 <th>Name</th>
-                <th>CreationDate</th>
-                <th>AddDate</th>
-                <th>TypeOrigine</th>
-                <th>NomLatin</th>
+                <th>Type</th>
                 <th>Rusticite</th>
-                <th>MoisFructiDebut</th>
-                <th>MoisFructiFin</th>
-                <th>MoisFleurDebut</th>
-                <th>MoisFleurFin</th>
-                <th>PFleur</th>
-                <th>PFructi</th>
                 <th>actions</th>
             </tr>
         </thead>
@@ -28,18 +58,16 @@
         {% for vegetable in vegetables %}
             <tr>
                 <td>{{ vegetable.id }}</td>
+                <td>
+                    {% if vegetable.defaultPhoto and vegetable.defaultPhoto.relativePath %}
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo" height="48" onerror="this.onerror=null;this.src='{{ asset('plante.png') }}'">
+                    {% else %}
+                        <img src="{{ asset('plante.png') }}" alt="pas de photo" height="48">
+                    {% endif %}
+                </td>
                 <td>{{ vegetable.name }}</td>
-                <td>{{ vegetable.creationDate ? vegetable.creationDate|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ vegetable.addDate ? vegetable.addDate|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ vegetable.typeOrigine }}</td>
-                <td>{{ vegetable.nomLatin }}</td>
+                <td>{{ vegetable.type ? vegetable.type.name : '' }}</td>
                 <td>{{ vegetable.rusticite }}</td>
-                <td>{{ vegetable.moisFructiDebut }}</td>
-                <td>{{ vegetable.moisFructiFin }}</td>
-                <td>{{ vegetable.moisFleurDebut }}</td>
-                <td>{{ vegetable.moisFleurFin }}</td>
-                <td>{{ vegetable.pFleur }}</td>
-                <td>{{ vegetable.pFructi }}</td>
                 <td>
                     <a href="{{ path('app_vegetable_show', {'id': vegetable.id}) }}">show</a>
                     <a href="{{ path('app_vegetable_edit', {'id': vegetable.id}) }}">edit</a>
@@ -47,11 +75,25 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="14">no records found</td>
+                <td colspan="6">no records found</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+
+    {% if pages > 1 %}
+        <nav>
+            <ul class="pagination">
+                <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                    <a class="page-link" href="{{ path('app_vegetable_index', {'page': page - 1}) }}">Précédent</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">{{ page }} / {{ pages }}</span></li>
+                <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
+                    <a class="page-link" href="{{ path('app_vegetable_index', {'page': page + 1}) }}">Suivant</a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
 
     <a href="{{ path('app_vegetable_new') }}">Create new</a>
 {% endblock %}

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Vegetable;
 use App\Entity\VegetableHistory;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,6 +15,20 @@ class VegetableHistoryRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, VegetableHistory::class);
+    }
+
+    /**
+     * @return VegetableHistory[] L'historique d'une plante, plus récent d'abord.
+     */
+    public function findByVegetable(Vegetable $vegetable): array
+    {
+        return $this->createQueryBuilder('h')
+            ->andWhere('h.entity = :vegetable')
+            ->setParameter('vegetable', $vegetable)
+            ->orderBy('h.date', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
     }
 
     //    /**

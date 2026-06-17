@@ -7,8 +7,14 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ActionRepository::class)]
-class Action
+class Action implements UserOwnedInterface
 {
+    /** Types d'intervention (cf. ancien projet, Model_Action::$TYPES_ACTION). */
+    public const TYPES_ACTION = ['observation', 'ajout_engrais', 'taille', 'rempotage', 'ceuillette'];
+
+    /** Titres possibles d'une observation (cf. Model_Action::$TITLE_OBSERVATION). */
+    public const TITRES_OBSERVATION = ['Fleurs', 'Fruits', 'Maladie', 'Auxiliaire', 'Ravageur', 'nouvelle_feuille'];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

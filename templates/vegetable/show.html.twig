@@ -67,4 +67,87 @@
     <a href="{{ path('app_vegetable_edit', {'id': vegetable.id}) }}">edit</a>
 
     {{ include('vegetable/_delete_form.html.twig') }}
+
+    <h2 class="mt-4">Photos</h2>
+    <p>
+        <a class="btn btn-sm btn-primary" href="{{ path('app_photo_new', {'vegetable': vegetable.id}) }}">Ajouter une photo</a>
+        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_photo_upload_multiple') }}">Ajouter plusieurs photos</a>
+    </p>
+    <div class="row">
+        {% for photo in photos %}
+            <div class="col-md-3 mb-3">
+                <div class="card {{ vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id ? 'border-success' : '' }}">
+                    {% if photo.relativePath %}
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: photo.relativePath}) }}" class="card-img-top" alt="photo" onerror="this.onerror=null;this.src='{{ asset('plante.png') }}'">
+                    {% else %}
+                        <img src="{{ asset('plante.png') }}" class="card-img-top" alt="photo manquante">
+                    {% endif %}
+                    <div class="card-body p-2">
+                        {% if vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id %}
+                            <span class="badge bg-success">Photo par défaut</span>
+                        {% else %}
+                            <form method="post" action="{{ path('app_photo_set_default', {'id': photo.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('default' ~ photo.id) }}">
+                                <button class="btn btn-sm btn-outline-secondary">Définir par défaut</button>
+                            </form>
+                        {% endif %}
+                        <form method="post" action="{{ path('app_photo_delete', {'id': photo.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer cette photo ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ photo.id) }}">
+                            <button class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Aucune photo.</p>
+        {% endfor %}
+    </div>
+
+    <h2 class="mt-4">Interventions</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Titre</th>
+                <th>Commentaire</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for action in actions %}
+            <tr>
+                <td>{{ action.date ? action.date|date('Y-m-d H:i') : '' }}</td>
+                <td>{{ action.typeAction }}</td>
+                <td><a href="{{ path('app_action_show', {'id': action.id}) }}">{{ action.title }}</a></td>
+                <td>{{ action.comment }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4">Aucune intervention</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="mt-4">Historique des modifications</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Champ</th>
+                <th>Ancienne valeur</th>
+                <th>Nouvelle valeur</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for history in histories %}
+            <tr>
+                <td>{{ history.date ? history.date|date('Y-m-d H:i') : '' }}</td>
+                <td>{{ history.key }}</td>
+                <td>{{ history.oldValue }}</td>
+                <td>{{ history.newValue }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4">Aucune modification enregistrée</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
