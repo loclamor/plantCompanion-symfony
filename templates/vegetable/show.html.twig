@@ -78,7 +78,9 @@
             <div class="col-md-3 mb-3">
                 <div class="card {{ vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id ? 'border-success' : '' }}">
                     {% if photo.relativePath %}
-                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: photo.relativePath}) }}" class="card-img-top" alt="photo">
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: photo.relativePath}) }}" class="card-img-top" alt="photo" onerror="this.onerror=null;this.src='{{ asset('plante.png') }}'">
+                    {% else %}
+                        <img src="{{ asset('plante.png') }}" class="card-img-top" alt="photo manquante">
                     {% endif %}
                     <div class="card-body p-2">
                         {% if vegetable.defaultPhoto and vegetable.defaultPhoto.id == photo.id %}

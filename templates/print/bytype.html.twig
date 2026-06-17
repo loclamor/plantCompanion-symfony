@@ -49,7 +49,9 @@
                     {% if vegetable.nomLatin %}<em>{{ vegetable.nomLatin }}</em><br>{% endif %}
                     Rusticité : {{ vegetable.rusticite }}<br>
                     {% if vegetable.defaultPhoto and vegetable.defaultPhoto.relativePath %}
-                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo">
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo" onerror="this.onerror=null;this.src='{{ asset('plante.png') }}'">
+                    {% else %}
+                        <img src="{{ asset('plante.png') }}" alt="pas de photo">
                     {% endif %}
                 </div>
             {% else %}

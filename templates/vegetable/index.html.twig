@@ -60,7 +60,9 @@
                 <td>{{ vegetable.id }}</td>
                 <td>
                     {% if vegetable.defaultPhoto and vegetable.defaultPhoto.relativePath %}
-                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo" height="48">
+                        <img src="{{ path('liip_imagine_filter', {filter: 'plant_thumb', path: vegetable.defaultPhoto.relativePath}) }}" alt="photo" height="48" onerror="this.onerror=null;this.src='{{ asset('plante.png') }}'">
+                    {% else %}
+                        <img src="{{ asset('plante.png') }}" alt="pas de photo" height="48">
                     {% endif %}
                 </td>
                 <td>{{ vegetable.name }}</td>
