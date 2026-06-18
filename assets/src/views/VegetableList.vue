@@ -129,7 +129,7 @@ onMounted(() => {
                 <div class="position-relative">
                     <input
                         type="checkbox"
-                        class="form-check-input vegetable-selection"
+                        class="form-check-input card-select"
                         :checked="isSelected(v.id)"
                         title="Sélectionner pour une intervention groupée"
                         @click.stop
@@ -179,15 +179,16 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.vegetable-selection {
+.card-select {
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
     z-index: 2;
     cursor: pointer;
-    background-color: #fff;
+    box-shadow: 0 0 0 2px #fff;
 }
 .selection-bar {
     position: fixed;
