@@ -100,6 +100,47 @@ class VegetableApiTest extends DatabaseTestCase
         $this->assertArrayHasKey('name', $data['errors']);
     }
 
+    public function testCreateWithoutGroupIsAllowed(): void
+    {
+        $alice = $this->createUser('alice');
+        [$type] = $this->refs($alice);
+
+        $this->client->loginUser($alice);
+        $created = $this->jsonRequest('POST', '/api/vegetables', [
+            'name' => 'Sauge',
+            'type' => $type->getId(),
+            // pas de group → « Sans groupe »
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertNull($created['group']);
+    }
+
+    public function testCreateWithInlinePorteGreffe(): void
+    {
+        $alice = $this->createUser('alice');
+        [$type, $group] = $this->refs($alice);
+
+        $this->client->loginUser($alice);
+        $created = $this->jsonRequest('POST', '/api/vegetables', [
+            'name' => 'Pommier',
+            'type' => $type->getId(),
+            'group' => $group->getId(),
+            'porteGreffe' => '-new-',
+            'newPorteGreffe' => 'Franc',
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertNotNull($created['porteGreffe']);
+        $this->assertSame('Franc', $created['porteGreffe']['name']);
+
+        // Le nouveau porte-greffe est listé et rattaché au type sélectionné.
+        $list = $this->jsonRequest('GET', '/api/porte-greffes');
+        $this->assertContains('Franc', array_column($list['items'], 'name'));
+        $pg = array_values(array_filter($list['items'], static fn ($p) => 'Franc' === $p['name']))[0];
+        $this->assertSame($type->getId(), $pg['type']['id']);
+    }
+
     public function testCannotShowOthersVegetable(): void
     {
         $alice = $this->createUser('alice');

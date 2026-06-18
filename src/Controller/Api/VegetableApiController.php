@@ -170,18 +170,27 @@ final class VegetableApiController extends AbstractController
             $vegetable->setType($type);
         }
 
-        // Groupe (obligatoire, possédé)
-        $group = $this->resolveOwned($this->groups, $data['group'] ?? null, $user);
-        if (null === $group) {
-            $errors['group'] = 'Groupe invalide ou obligatoire.';
-        } else {
-            $vegetable->setGroup($group);
-        }
+        // Groupe (optionnel, possédé) — « Sans groupe » du legacy.
+        $vegetable->setGroup($this->resolveOwned($this->groups, $data['group'] ?? null, $user));
 
         // Relations optionnelles
         $vegetable->setParent($this->resolveOwned($this->vegetables, $data['parent'] ?? null, $user));
-        $vegetable->setPorteGreffe($this->resolveOwned($this->porteGreffes, $data['porteGreffe'] ?? null, $user));
         $vegetable->setLieuOrigine($this->resolveOwned($this->lieux, $data['lieuOrigine'] ?? null, $user));
+
+        // Porte-greffe : soit existant, soit création inline (« Nouveau… » du legacy :
+        // nouveau porte-greffe nommé, rattaché au type sélectionné).
+        if ('-new-' === ($data['porteGreffe'] ?? null)) {
+            $newName = trim((string) ($data['newPorteGreffe'] ?? ''));
+            if ('' !== $newName && null !== $type) {
+                $pg = (new \App\Entity\PorteGreffe())->setName($newName)->setType($type)->setUtilisateur($user);
+                $this->em->persist($pg);
+                $vegetable->setPorteGreffe($pg);
+            } else {
+                $vegetable->setPorteGreffe(null);
+            }
+        } else {
+            $vegetable->setPorteGreffe($this->resolveOwned($this->porteGreffes, $data['porteGreffe'] ?? null, $user));
+        }
 
         // Champs scalaires
         $vegetable->setTypeOrigine($this->nullableString($data['typeOrigine'] ?? null));

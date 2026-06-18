@@ -2,9 +2,11 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import http from '../api/http';
+import { useGroupStore } from '../stores/group';
 
 const props = defineProps({ id: { type: [String, Number], default: null } });
 const router = useRouter();
+const groupStore = useGroupStore();
 
 const isEdit = computed(() => props.id != null);
 const loading = ref(true);
@@ -18,25 +20,41 @@ const porteGreffes = ref([]);
 const lieux = ref([]);
 const parents = ref([]);
 
-const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+// Valeurs fixes reprises du legacy (Model_Vegetable).
+const TYPE_ORIGINES = [
+    { value: 'bouture', label: 'Bouture' },
+    { value: 'semis', label: 'Semis' },
+    { value: 'greffe', label: 'Greffe' },
+    { value: 'marcottage', label: 'Marcottage' },
+];
+const PERIODES = ['Printemps', 'Ete', 'Automne', 'Hivers', '4 Saisons', 'Printemps - Automne'];
+const MONTHS = [
+    { value: 1, label: 'Janvier' }, { value: 2, label: 'Février' }, { value: 3, label: 'Mars' },
+    { value: 4, label: 'Avril' }, { value: 5, label: 'Mai' }, { value: 6, label: 'Juin' },
+    { value: 7, label: 'Juillet' }, { value: 8, label: 'Août' }, { value: 9, label: 'Septembre' },
+    { value: 10, label: 'Octobre' }, { value: 11, label: 'Novembre' }, { value: 12, label: 'Décembre' },
+];
+
+const NEW_PG = '-new-';
 
 const form = reactive({
     name: '',
     creationDate: '',
     addDate: '',
-    typeOrigine: '',
+    typeOrigine: null,
     nomLatin: '',
     rusticite: null,
     moisFructiDebut: null,
     moisFructiFin: null,
     moisFleurDebut: null,
     moisFleurFin: null,
-    pFleur: '',
-    pFructi: '',
+    pFleur: null,
+    pFructi: null,
     type: null,
     group: null,
     parent: null,
     porteGreffe: null,
+    newPorteGreffe: '',
     lieuOrigine: null,
 });
 
@@ -68,15 +86,15 @@ async function loadVegetable() {
     form.name = data.name ?? '';
     form.creationDate = toLocalInput(data.creationDate);
     form.addDate = toLocalInput(data.addDate);
-    form.typeOrigine = data.typeOrigine ?? '';
+    form.typeOrigine = data.typeOrigine ?? null;
     form.nomLatin = data.nomLatin ?? '';
     form.rusticite = data.rusticite;
     form.moisFructiDebut = data.moisFructiDebut;
     form.moisFructiFin = data.moisFructiFin;
     form.moisFleurDebut = data.moisFleurDebut;
     form.moisFleurFin = data.moisFleurFin;
-    form.pFleur = data.pFleur ?? '';
-    form.pFructi = data.pFructi ?? '';
+    form.pFleur = data.pFleur ?? null;
+    form.pFructi = data.pFructi ?? null;
     form.type = data.type?.id ?? null;
     form.group = data.group?.id ?? null;
     form.parent = data.parent?.id ?? null;
@@ -110,7 +128,12 @@ onMounted(async () => {
     loading.value = true;
     try {
         await loadReferences();
-        if (isEdit.value) await loadVegetable();
+        if (isEdit.value) {
+            await loadVegetable();
+        } else if (groupStore.currentId != null) {
+            // Création : pré-sélection du groupe courant (comportement legacy).
+            form.group = groupStore.currentId;
+        }
     } finally {
         loading.value = false;
     }
@@ -146,39 +169,48 @@ onMounted(async () => {
             <div v-if="errors.type" class="invalid-feedback">{{ errors.type }}</div>
         </div>
         <div class="col-md-6">
-            <label class="form-label">Groupe *</label>
-            <select v-model="form.group" class="form-select" :class="{ 'is-invalid': errors.group }" required>
-                <option :value="null" disabled>— Choisir —</option>
+            <label class="form-label">Groupe</label>
+            <select v-model="form.group" class="form-select">
+                <option :value="null">Sans groupe</option>
                 <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
             </select>
-            <div v-if="errors.group" class="invalid-feedback">{{ errors.group }}</div>
         </div>
 
         <div class="col-md-4">
             <label class="form-label">Plante parente</label>
             <select v-model="form.parent" class="form-select">
-                <option :value="null">— Aucune —</option>
+                <option :value="null">Sans parent</option>
                 <option v-for="p in parents" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
         </div>
         <div class="col-md-4">
             <label class="form-label">Porte-greffe</label>
             <select v-model="form.porteGreffe" class="form-select">
-                <option :value="null">— Aucun —</option>
+                <option :value="null">Non connu</option>
                 <option v-for="pg in porteGreffes" :key="pg.id" :value="pg.id">{{ pg.name }}</option>
+                <option :value="NEW_PG">Nouveau…</option>
             </select>
+            <input
+                v-if="form.porteGreffe === NEW_PG"
+                v-model="form.newPorteGreffe"
+                class="form-control mt-2"
+                placeholder="Nouveau porte-greffe… (rattaché au type sélectionné)"
+            >
         </div>
         <div class="col-md-4">
             <label class="form-label">Lieu d'origine</label>
             <select v-model="form.lieuOrigine" class="form-select">
-                <option :value="null">— Aucun —</option>
+                <option :value="null">Non connu</option>
                 <option v-for="l in lieux" :key="l.id" :value="l.id">{{ l.name }}</option>
             </select>
         </div>
 
         <div class="col-md-6">
-            <label class="form-label">Origine (type)</label>
-            <input v-model="form.typeOrigine" class="form-control">
+            <label class="form-label">Type d'origine</label>
+            <select v-model="form.typeOrigine" class="form-select">
+                <option :value="null">Aucun</option>
+                <option v-for="t in TYPE_ORIGINES" :key="t.value" :value="t.value">{{ t.label }}</option>
+            </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Rusticité (°C)</label>
@@ -186,41 +218,48 @@ onMounted(async () => {
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Fructification début</label>
+            <label class="form-label">Début récolte</label>
             <select v-model.number="form.moisFructiDebut" class="form-select">
-                <option :value="null">—</option>
-                <option v-for="m in MONTHS" :key="m" :value="m">{{ m }}</option>
+                <option :value="null">Choisir…</option>
+                <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label">Fructification fin</label>
+            <label class="form-label">Fin récolte</label>
             <select v-model.number="form.moisFructiFin" class="form-select">
-                <option :value="null">—</option>
-                <option v-for="m in MONTHS" :key="m" :value="m">{{ m }}</option>
+                <option :value="null">Choisir…</option>
+                <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label">Floraison début</label>
-            <select v-model.number="form.moisFleurDebut" class="form-select">
+            <label class="form-label">Ou période de récolte</label>
+            <select v-model="form.pFructi" class="form-select">
                 <option :value="null">—</option>
-                <option v-for="m in MONTHS" :key="m" :value="m">{{ m }}</option>
+                <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Floraison fin</label>
-            <select v-model.number="form.moisFleurFin" class="form-select">
-                <option :value="null">—</option>
-                <option v-for="m in MONTHS" :key="m" :value="m">{{ m }}</option>
-            </select>
-        </div>
+        <div class="col-md-3"></div>
 
-        <div class="col-md-6">
-            <label class="form-label">Pollinisateur fleur</label>
-            <input v-model="form.pFleur" class="form-control">
+        <div class="col-md-3">
+            <label class="form-label">Début floraison</label>
+            <select v-model.number="form.moisFleurDebut" class="form-select">
+                <option :value="null">Choisir…</option>
+                <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
+            </select>
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Pollinisateur fructification</label>
-            <input v-model="form.pFructi" class="form-control">
+        <div class="col-md-3">
+            <label class="form-label">Fin floraison</label>
+            <select v-model.number="form.moisFleurFin" class="form-select">
+                <option :value="null">Choisir…</option>
+                <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Ou période de floraison</label>
+            <select v-model="form.pFleur" class="form-select">
+                <option :value="null">—</option>
+                <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
+            </select>
         </div>
 
         <div class="col-md-6">
