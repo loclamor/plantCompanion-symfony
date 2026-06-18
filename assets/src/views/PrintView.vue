@@ -139,6 +139,7 @@ onMounted(async () => {
                         <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
                         <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
                     </p>
+                    <span class="plant-id">#{{ it.id }}</span>
                 </div>
             </div>
         </div>
@@ -164,6 +165,16 @@ onMounted(async () => {
     min-height: 3.4cm;
     overflow: hidden;
     margin: 0;
+}
+.plant-label .card-body {
+    position: relative;
+}
+.plant-id {
+    position: absolute;
+    bottom: 2px;
+    right: 6px;
+    font-size: 0.7rem;
+    color: #adb5bd;
 }
 @media print {
     @page {
