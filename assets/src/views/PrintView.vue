@@ -4,7 +4,18 @@ import { useRoute } from 'vue-router';
 import http from '../api/http';
 
 const route = useRoute();
-const PLACEHOLDER = '/plante.png';
+
+// Mois nommés (index 1-12) comme le legacy.
+const MOIS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+function fleurLabel(it) {
+    if (it.moisFleurDebut > 0 && it.moisFleurFin > 0) return `${MOIS[it.moisFleurDebut]} - ${MOIS[it.moisFleurFin]}`;
+    return it.pFleur ?? '';
+}
+function fructiLabel(it) {
+    if (it.moisFructiDebut > 0 && it.moisFructiFin > 0) return `${MOIS[it.moisFructiDebut]} - ${MOIS[it.moisFructiFin]}`;
+    return it.pFructi ?? '';
+}
 
 const items = ref([]);
 const types = ref([]);
@@ -34,10 +45,6 @@ function selectAllFiltered() {
 }
 function clearAll() {
     selected.value = new Set();
-}
-function onImgError(event) {
-    event.target.onerror = null;
-    event.target.src = PLACEHOLDER;
 }
 function doPrint() {
     window.print();
@@ -105,36 +112,48 @@ onMounted(async () => {
         </template>
     </div>
 
-    <!-- Zone imprimée : étiquettes (mise en page conservée du legacy) -->
-    <div class="labels">
-        <div v-for="it in toPrint" :key="it.id" class="plant-label">
-            <strong>{{ it.name }}</strong><br>
-            <em v-if="it.nomLatin">{{ it.nomLatin }}</em>
-            <span v-if="it.nomLatin"><br></span>
-            <span v-if="it.rusticite != null">Rusticité : {{ it.rusticite }}°C<br></span>
-            <img :src="it.defaultPhotoUrl || PLACEHOLDER" alt="photo" class="label-img" @error="onImgError">
-        </div>
+    <!-- Zone imprimée : étiquettes (mise en page legacy, 14 par page A4) -->
+    <div class="labels-sheet">
+        <template v-for="(it, idx) in toPrint" :key="it.id">
+            <div class="plant-label card">
+                <div class="card-body">
+                    <h5 class="card-title mb-1">{{ it.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        {{ it.porteGreffe ?? '' }}
+                        <span class="float-end">{{ it.rusticite != null ? it.rusticite + '°C' : '' }}</span>
+                    </h6>
+                    <p class="card-text mb-0">
+                        <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
+                        <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
+                    </p>
+                </div>
+            </div>
+            <div v-if="(idx + 1) % 14 === 0" class="page-break"></div>
+        </template>
     </div>
 </template>
 
 <style scoped>
+.labels-sheet {
+    width: 21cm;
+}
 .plant-label {
     width: 9.5cm;
-    min-height: 6cm;
-    border: 1px solid #ccc;
-    padding: 0.5cm;
-    margin: 0.3cm;
+    height: 138px;
+    overflow: hidden;
+    margin: 0 0.2cm 0.5cm;
     display: inline-block;
     vertical-align: top;
 }
-.label-img {
-    max-width: 100%;
-    max-height: 4cm;
-    object-fit: contain;
+.page-break {
+    display: block;
 }
 @media print {
     .plant-label {
         page-break-inside: avoid;
+    }
+    .page-break {
+        page-break-after: always;
     }
 }
 </style>

@@ -18,7 +18,7 @@ class PrintApiTest extends DatabaseTestCase
         $alice = $this->createUser('alice');
         $bob = $this->createUser('bob');
         $v = $this->createVegetable($alice, 'Tomate');
-        $v->setNomLatin('Solanum lycopersicum')->setRusticite(-2);
+        $v->setRusticite(-2)->setMoisFleurDebut(4)->setMoisFleurFin(6);
         $this->em->flush();
         $this->createVegetable($bob, 'Courgette Bob');
 
@@ -32,8 +32,9 @@ class PrintApiTest extends DatabaseTestCase
         $this->assertNotContains('Courgette Bob', $names);
 
         $label = $data['items'][0];
-        $this->assertArrayHasKey('nomLatin', $label);
         $this->assertArrayHasKey('rusticite', $label);
-        $this->assertArrayHasKey('defaultPhotoUrl', $label);
+        $this->assertArrayHasKey('porteGreffe', $label);
+        $this->assertArrayHasKey('moisFleurDebut', $label);
+        $this->assertArrayHasKey('pFructi', $label);
     }
 }
