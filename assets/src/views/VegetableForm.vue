@@ -218,7 +218,14 @@ onMounted(async () => {
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Début récolte</label>
+            <label class="form-label">Période de récolte</label>
+            <select v-model="form.pFructi" class="form-select">
+                <option :value="null">—</option>
+                <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Ou début récolte</label>
             <select v-model.number="form.moisFructiDebut" class="form-select">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
@@ -231,17 +238,17 @@ onMounted(async () => {
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
+        <div class="col-md-3"></div>
+
         <div class="col-md-3">
-            <label class="form-label">Ou période de récolte</label>
-            <select v-model="form.pFructi" class="form-select">
+            <label class="form-label">Période de floraison</label>
+            <select v-model="form.pFleur" class="form-select">
                 <option :value="null">—</option>
                 <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
-        <div class="col-md-3"></div>
-
         <div class="col-md-3">
-            <label class="form-label">Début floraison</label>
+            <label class="form-label">Ou début floraison</label>
             <select v-model.number="form.moisFleurDebut" class="form-select">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
@@ -252,13 +259,6 @@ onMounted(async () => {
             <select v-model.number="form.moisFleurFin" class="form-select">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Ou période de floraison</label>
-            <select v-model="form.pFleur" class="form-select">
-                <option :value="null">—</option>
-                <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
 
