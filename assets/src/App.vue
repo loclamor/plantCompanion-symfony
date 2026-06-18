@@ -37,29 +37,32 @@ async function logout() {
 <template>
     <nav v-if="isAuth" class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <router-link class="navbar-brand" :to="{ name: 'vegetable-index' }">PlantCompanion</router-link>
+            <router-link class="navbar-brand d-flex align-items-center gap-2" :to="{ name: 'vegetable-index' }">
+                <img :src="'/logo_48.png'" alt="" width="28" height="28">
+                <span>PlantCompanion</span>
+            </router-link>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'vegetable-index' }">Plantes</router-link>
+                        <router-link class="nav-link" :to="{ name: 'vegetable-index' }"><i class="bi bi-flower1"></i> Plantes</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'action-index' }">Interventions</router-link>
+                        <router-link class="nav-link" :to="{ name: 'action-index' }"><i class="bi bi-journal-text"></i> Interventions</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'calendar' }">Calendrier</router-link>
+                        <router-link class="nav-link" :to="{ name: 'calendar' }"><i class="bi bi-calendar3"></i> Calendrier</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'photo-import' }">Importer photos</router-link>
+                        <router-link class="nav-link" :to="{ name: 'photo-import' }"><i class="bi bi-images"></i> Importer</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'print' }">Impression</router-link>
+                        <router-link class="nav-link" :to="{ name: 'print' }"><i class="bi bi-printer"></i> Impression</router-link>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Paramétrage</a>
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Paramétrage</a>
                         <ul class="dropdown-menu">
                             <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'types' } }">Types</router-link></li>
                             <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'porte-greffes' } }">Porte-greffes</router-link></li>
@@ -69,17 +72,22 @@ async function logout() {
                     </li>
                 </ul>
                 <ul class="navbar-nav align-items-center">
-                    <li class="nav-item me-3">
-                        <select class="form-select form-select-sm" :value="groups.currentId ?? ''" @change="onGroupChange">
+                    <li class="nav-item me-3 d-flex align-items-center text-secondary">
+                        <i class="bi bi-collection me-1"></i>
+                        <select class="form-select form-select-sm" :value="groups.currentId ?? ''" @change="onGroupChange" style="min-width: 160px">
                             <option value="">Tous les groupes</option>
                             <option v-for="g in groups.groups" :key="g.id" :value="g.id">{{ g.name }}</option>
                         </select>
                     </li>
-                    <li class="nav-item">
-                        <span class="navbar-text me-3">Connecté en tant que {{ auth.user?.name }}</span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" @click.prevent="logout">Déconnexion</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ auth.user?.name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Connecté en tant que {{ auth.user?.name }}</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" @click.prevent="logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -90,3 +98,15 @@ async function logout() {
         <router-view />
     </div>
 </template>
+
+<style scoped>
+/* Page active mise en évidence dans la navbar. */
+.navbar-nav .nav-link.router-link-active {
+    color: #fff;
+    font-weight: 600;
+    border-bottom: 2px solid var(--main-primary, #008000);
+}
+.navbar-brand.router-link-active {
+    border: 0;
+}
+</style>
