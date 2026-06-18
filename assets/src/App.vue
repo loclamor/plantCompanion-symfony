@@ -46,7 +46,16 @@ async function logout() {
                     <li class="nav-item">
                         <router-link class="nav-link" :to="{ name: 'vegetable-index' }">Plantes</router-link>
                     </li>
-                    <!-- Interventions / Calendrier / Impression / Paramétrage : ajoutés en phase 4 -->
+                    <!-- Interventions / Calendrier / Impression : ajoutés plus tard -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Paramétrage</a>
+                        <ul class="dropdown-menu">
+                            <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'types' } }">Types</router-link></li>
+                            <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'porte-greffes' } }">Porte-greffes</router-link></li>
+                            <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'groups' } }">Groupes</router-link></li>
+                            <li><router-link class="dropdown-item" :to="{ name: 'parametrage-index', params: { resource: 'lieux' } }">Lieux</router-link></li>
+                        </ul>
+                    </li>
                 </ul>
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item me-3">
