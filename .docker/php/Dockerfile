@@ -26,6 +26,9 @@ RUN sed -i 's/www-data:x:33:33/www-data:x:1000:1000/' /etc/passwd && \
 
 COPY --from=composer:lts /usr/bin/composer /usr/local/bin/composer
 
+# Limites d'upload des photos
+COPY uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 RUN chown -R www-data: /var/www/
 
 WORKDIR /usr/src/app
