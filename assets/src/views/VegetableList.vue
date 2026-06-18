@@ -125,7 +125,7 @@ onMounted(() => {
 
     <div v-else class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         <div v-for="v in vegetables" :key="v.id" class="col">
-            <router-link class="card h-100 text-decoration-none text-dark" :class="{ 'border-success': isSelected(v.id) }" :to="{ name: 'vegetable-show', params: { id: v.id } }">
+            <router-link class="card h-100 text-decoration-none text-dark plant-card" :class="{ selected: isSelected(v.id) }" :to="{ name: 'vegetable-show', params: { id: v.id } }">
                 <div class="position-relative">
                     <input
                         type="checkbox"
@@ -189,6 +189,24 @@ onMounted(() => {
     z-index: 2;
     cursor: pointer;
     box-shadow: 0 0 0 2px #fff;
+}
+.card-select:checked {
+    background-color: var(--main-primary);
+    border-color: var(--main-primary);
+}
+
+/* Carte : ombre douce, accentuée au survol et à la sélection. */
+.plant-card {
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.plant-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+}
+.plant-card.selected {
+    border-color: var(--main-primary);
+    box-shadow: 0 0 0 2px var(--main-primary), 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 .selection-bar {
     position: fixed;
