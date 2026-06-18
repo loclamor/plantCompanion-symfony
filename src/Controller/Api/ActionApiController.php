@@ -113,6 +113,39 @@ final class ActionApiController extends AbstractController
     }
 
     /**
+     * Upload de photos rattachées à l'intervention ET à sa plante (comme le
+     * legacy : l'input file du formulaire d'action).
+     */
+    #[Route('/actions/{id}/photos', name: 'api_action_photos_upload', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function uploadPhotos(Request $request, Action $action, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(OwnerVoter::EDIT, $action);
+
+        $files = $request->files->all()['images'] ?? [];
+        $files = \is_array($files) ? $files : [$files];
+        $files = array_filter($files, static fn ($f) => $f instanceof \Symfony\Component\HttpFoundation\File\UploadedFile);
+
+        if ([] === $files) {
+            return new JsonResponse(['message' => 'Aucun fichier reçu.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        foreach ($files as $file) {
+            if (!str_starts_with((string) $file->getMimeType(), 'image/')) {
+                return new JsonResponse(['message' => 'Seules les images sont acceptées.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $photo = new \App\Entity\Photo();
+            $photo->setUtilisateur($user);
+            $photo->setVegetable($action->getVegetable());
+            $photo->setAction($action);
+            $photo->setImageFile($file);
+            $this->em->persist($photo);
+        }
+        $this->em->flush();
+
+        return new JsonResponse(null, Response::HTTP_CREATED);
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @return array<string, string>

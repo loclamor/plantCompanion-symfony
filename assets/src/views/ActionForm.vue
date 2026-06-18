@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import exifr from 'exifr';
 import http from '../api/http';
 
 const props = defineProps({ id: { type: [String, Number], default: null } });
@@ -14,6 +15,11 @@ const errors = ref({});
 
 const vegetables = ref([]);
 const typesAction = ref([]);
+const titresObservation = ref([]);
+const selectedFiles = ref([]);
+const fileInput = ref(null);
+
+const isObservation = computed(() => form.typeAction === 'observation');
 
 const form = reactive({
     vegetable: null,
@@ -23,12 +29,20 @@ const form = reactive({
     comment: '',
 });
 
-function toLocalInput(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
+function toLocalInput(value) {
+    if (!value) return '';
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+// Bascule titre : observation -> select des titres prédéfinis, sinon input libre.
+watch(isObservation, (obs) => {
+    if (obs && !titresObservation.value.includes(form.title)) {
+        form.title = titresObservation.value[0] ?? '';
+    }
+});
 
 async function loadReferences() {
     const [v, t] = await Promise.all([
@@ -37,6 +51,7 @@ async function loadReferences() {
     ]);
     vegetables.value = v.data.items ?? v.data;
     typesAction.value = t.data.typesAction;
+    titresObservation.value = t.data.titresObservation;
 }
 
 async function loadAction() {
@@ -48,15 +63,39 @@ async function loadAction() {
     form.comment = data.comment ?? '';
 }
 
+// Lit la date EXIF de la première photo et pré-remplit le champ date (legacy).
+async function onFilesChange(event) {
+    selectedFiles.value = Array.from(event.target.files);
+    if (selectedFiles.value.length === 0) return;
+    try {
+        const tags = await exifr.parse(selectedFiles.value[0], ['DateTimeOriginal']);
+        if (tags?.DateTimeOriginal) {
+            form.date = toLocalInput(tags.DateTimeOriginal);
+        }
+    } catch {
+        // pas de métadonnée EXIF exploitable : on ignore
+    }
+}
+
+async function uploadPhotos(actionId) {
+    if (selectedFiles.value.length === 0) return;
+    const fd = new FormData();
+    for (const f of selectedFiles.value) fd.append('images', f);
+    await http.post(`/actions/${actionId}/photos`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+}
+
 async function submit() {
     saving.value = true;
     errors.value = {};
     try {
+        let actionId = props.id;
         if (isEdit.value) {
             await http.put(`/actions/${props.id}`, { ...form });
         } else {
-            await http.post('/actions', { ...form });
+            const { data } = await http.post('/actions', { ...form });
+            actionId = data.id;
         }
+        await uploadPhotos(actionId);
         router.push({ name: 'action-index' });
     } catch (e) {
         if (e.response?.status === 422) {
@@ -76,10 +115,9 @@ onMounted(async () => {
         if (isEdit.value) {
             await loadAction();
         } else {
-            // Pré-sélection éventuelle de la plante via ?vegetable=ID (depuis la fiche).
             const pre = Number(route.query.vegetable);
             if (pre > 0) form.vegetable = pre;
-            form.date = toLocalInput(new Date().toISOString());
+            form.date = toLocalInput(new Date());
         }
     } finally {
         loading.value = false;
@@ -125,13 +163,25 @@ onMounted(async () => {
 
                 <div class="mb-3 mt-3">
                     <label class="form-label">Titre *</label>
-                    <input v-model="form.title" class="form-control" :class="{ 'is-invalid': errors.title }" required>
+                    <!-- observation -> select des titres prédéfinis ; sinon input libre -->
+                    <select v-if="isObservation" v-model="form.title" class="form-select" :class="{ 'is-invalid': errors.title }">
+                        <option v-for="o in titresObservation" :key="o" :value="o">{{ o }}</option>
+                    </select>
+                    <input v-else v-model="form.title" class="form-control" :class="{ 'is-invalid': errors.title }" required>
                     <div v-if="errors.title" class="invalid-feedback">{{ errors.title }}</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Commentaire</label>
                     <textarea v-model="form.comment" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Photos</label>
+                    <input ref="fileInput" type="file" accept="image/*" multiple class="form-control" @change="onFilesChange">
+                    <div v-if="selectedFiles.length" class="form-text">
+                        {{ selectedFiles.length }} photo(s) — la date EXIF de la première pré-remplit le champ Date.
+                    </div>
                 </div>
 
                 <button class="btn btn-primary px-4" :disabled="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer' }}</button>
