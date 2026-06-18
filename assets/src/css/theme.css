@@ -115,4 +115,11 @@ td.month {
     .no-print {
         display: none !important;
     }
+    /* Le .container Bootstrap bride la largeur → étiquettes pleine page (2 col). */
+    .container {
+        max-width: none !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
 }
