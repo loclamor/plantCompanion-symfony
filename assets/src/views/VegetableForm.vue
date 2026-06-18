@@ -172,8 +172,9 @@ onMounted(async () => {
     </div>
 
     <form v-else @submit.prevent="submit" class="row g-3">
-        <div v-if="errors._global" class="alert alert-danger">{{ errors._global }}</div>
+        <div v-if="errors._global" class="alert alert-danger col-12">{{ errors._global }}</div>
 
+        <!-- Identité -->
         <div class="col-md-6">
             <label class="form-label">Nom *</label>
             <input v-model="form.name" class="form-control" :class="{ 'is-invalid': errors.name }" required>
@@ -184,6 +185,7 @@ onMounted(async () => {
             <input v-model="form.nomLatin" class="form-control">
         </div>
 
+        <!-- Classification -->
         <div class="col-md-6">
             <label class="form-label">Type *</label>
             <select v-model="form.type" class="form-select" :class="{ 'is-invalid': errors.type }" required>
@@ -200,6 +202,8 @@ onMounted(async () => {
             </select>
         </div>
 
+        <!-- Provenance -->
+        <div class="col-12"><h6 class="text-muted border-bottom pb-1 mt-2">Provenance</h6></div>
         <div class="col-md-4">
             <label class="form-label">Plante parente</label>
             <select v-model="form.parent" class="form-select">
@@ -228,7 +232,6 @@ onMounted(async () => {
                 <option v-for="l in lieux" :key="l.id" :value="l.id">{{ l.name }}</option>
             </select>
         </div>
-
         <div class="col-md-6">
             <label class="form-label">Type d'origine</label>
             <select v-model="form.typeOrigine" class="form-select">
@@ -236,56 +239,61 @@ onMounted(async () => {
                 <option v-for="t in TYPE_ORIGINES" :key="t.value" :value="t.value">{{ t.label }}</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-6">
             <label class="form-label">Rusticité (°C)</label>
             <input v-model.number="form.rusticite" type="number" class="form-control">
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label">Période de récolte</label>
+        <!-- Récolte -->
+        <div class="col-12"><h6 class="text-muted border-bottom pb-1 mt-2">Récolte</h6></div>
+        <div class="col-md-4">
+            <label class="form-label">Période</label>
             <select v-model="form.pFructi" class="form-select" @change="onPeriodChange('Fructi')">
                 <option :value="null">—</option>
                 <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Ou début récolte</label>
+        <div class="col-md-4">
+            <label class="form-label">Début (mois)</label>
             <select v-model.number="form.moisFructiDebut" class="form-select" @change="onMonthChange('Fructi')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Fin récolte</label>
+        <div class="col-md-4">
+            <label class="form-label">Fin (mois)</label>
             <select v-model.number="form.moisFructiFin" class="form-select" @change="onMonthChange('Fructi')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
-        <div class="col-md-3"></div>
 
-        <div class="col-md-3">
-            <label class="form-label">Période de floraison</label>
+        <!-- Floraison -->
+        <div class="col-12"><h6 class="text-muted border-bottom pb-1 mt-2">Floraison</h6></div>
+        <div class="col-md-4">
+            <label class="form-label">Période</label>
             <select v-model="form.pFleur" class="form-select" @change="onPeriodChange('Fleur')">
                 <option :value="null">—</option>
                 <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Ou début floraison</label>
+        <div class="col-md-4">
+            <label class="form-label">Début (mois)</label>
             <select v-model.number="form.moisFleurDebut" class="form-select" @change="onMonthChange('Fleur')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Fin floraison</label>
+        <div class="col-md-4">
+            <label class="form-label">Fin (mois)</label>
             <select v-model.number="form.moisFleurFin" class="form-select" @change="onMonthChange('Fleur')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
 
+        <!-- Dates -->
+        <div class="col-12"><h6 class="text-muted border-bottom pb-1 mt-2">Dates</h6></div>
         <div class="col-md-6">
             <label class="form-label">Date de création</label>
             <input v-model="form.creationDate" type="datetime-local" class="form-control">
@@ -295,7 +303,7 @@ onMounted(async () => {
             <input v-model="form.addDate" type="datetime-local" class="form-control">
         </div>
 
-        <div class="col-12">
+        <div class="col-12 mt-3">
             <button class="btn btn-primary" :disabled="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer' }}</button>
             <router-link class="btn btn-outline-secondary" :to="{ name: 'vegetable-index' }">Annuler</router-link>
         </div>
