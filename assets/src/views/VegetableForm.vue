@@ -28,6 +28,30 @@ const TYPE_ORIGINES = [
     { value: 'marcottage', label: 'Marcottage' },
 ];
 const PERIODES = ['Printemps', 'Ete', 'Automne', 'Hivers', '4 Saisons', 'Printemps - Automne'];
+// Mapping période -> [mois début, mois fin] repris du legacy (Model_Vegetable::PERIODES_MOIS).
+const PERIODES_MOIS = {
+    Printemps: [3, 5],
+    Ete: [6, 8],
+    Automne: [9, 11],
+    Hivers: [12, 2],
+    '4 Saisons': [8, 7],
+    'Printemps - Automne': [3, 5],
+};
+
+// Synchro bidirectionnelle période <-> mois (prefix = 'Fleur' | 'Fructi').
+function onPeriodChange(prefix) {
+    const periode = form['p' + prefix];
+    if (periode && PERIODES_MOIS[periode]) {
+        form['mois' + prefix + 'Debut'] = PERIODES_MOIS[periode][0];
+        form['mois' + prefix + 'Fin'] = PERIODES_MOIS[periode][1];
+    }
+}
+function onMonthChange(prefix) {
+    const debut = form['mois' + prefix + 'Debut'];
+    const fin = form['mois' + prefix + 'Fin'];
+    const match = Object.entries(PERIODES_MOIS).find(([, [a, b]]) => a === debut && b === fin);
+    form['p' + prefix] = match ? match[0] : null;
+}
 const MONTHS = [
     { value: 1, label: 'Janvier' }, { value: 2, label: 'Février' }, { value: 3, label: 'Mars' },
     { value: 4, label: 'Avril' }, { value: 5, label: 'Mai' }, { value: 6, label: 'Juin' },
@@ -219,21 +243,21 @@ onMounted(async () => {
 
         <div class="col-md-3">
             <label class="form-label">Période de récolte</label>
-            <select v-model="form.pFructi" class="form-select">
+            <select v-model="form.pFructi" class="form-select" @change="onPeriodChange('Fructi')">
                 <option :value="null">—</option>
                 <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Ou début récolte</label>
-            <select v-model.number="form.moisFructiDebut" class="form-select">
+            <select v-model.number="form.moisFructiDebut" class="form-select" @change="onMonthChange('Fructi')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Fin récolte</label>
-            <select v-model.number="form.moisFructiFin" class="form-select">
+            <select v-model.number="form.moisFructiFin" class="form-select" @change="onMonthChange('Fructi')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
@@ -242,21 +266,21 @@ onMounted(async () => {
 
         <div class="col-md-3">
             <label class="form-label">Période de floraison</label>
-            <select v-model="form.pFleur" class="form-select">
+            <select v-model="form.pFleur" class="form-select" @change="onPeriodChange('Fleur')">
                 <option :value="null">—</option>
                 <option v-for="p in PERIODES" :key="p" :value="p">{{ p }}</option>
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Ou début floraison</label>
-            <select v-model.number="form.moisFleurDebut" class="form-select">
+            <select v-model.number="form.moisFleurDebut" class="form-select" @change="onMonthChange('Fleur')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Fin floraison</label>
-            <select v-model.number="form.moisFleurFin" class="form-select">
+            <select v-model.number="form.moisFleurFin" class="form-select" @change="onMonthChange('Fleur')">
                 <option :value="null">Choisir…</option>
                 <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
             </select>
