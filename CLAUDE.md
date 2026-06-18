@@ -28,7 +28,9 @@ Le dev tourne dans des conteneurs (php-fpm, nginx sur `:8001`, MySQL). On n'exé
 
 Pour toute commande Symfony, entrer dans le conteneur : `make bash` puis `bin/console ...` (ex. `bin/console make:entity`, `bin/console doctrine:migrations:migrate`, `bin/console doctrine:migrations:diff`).
 
-Note : `.env` contient un `DATABASE_URL` PostgreSQL (placeholder par défaut de Symfony) mais le conteneur réel est **MySQL** (`docker-compose.yml`). Le `DATABASE_URL` effectif est fourni à l'environnement Docker.
+Note : `.env` contient un `DATABASE_URL` PostgreSQL (placeholder par défaut de Symfony) mais le conteneur réel est **MySQL** (`docker-compose.yml`). Le `DATABASE_URL` effectif est dans `.env.local` (non versionné).
+
+**Charset connexion = `utf8mb4` (impératif).** Les colonnes sont en utf8mb4 et contiennent du UTF-8 valide. Un `charset=latin1` sur la connexion fait reconvertir en latin1 côté client → octets invalides → 500 « Malformed UTF-8 ». Garder `&charset=utf8mb4` dans `DATABASE_URL`. (Quelques lignes historiques restent double-encodées ; voir la migration `fix double-encoded UTF-8`.)
 
 ## Tests
 
