@@ -1,4 +1,0 @@
-<form method="post" action="{{ path('app_porte_greffe_delete', {'id': porte_greffe.id}) }}" onsubmit="return confirm('Supprimer cet élément ?');">
-    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ porte_greffe.id) }}">
-    <button class="btn">Supprimer</button>
-</form>

@@ -20,9 +20,8 @@ const routes = [
 ];
 
 const router = createRouter({
-    // Le SPA est monté sous /app pendant la transition (les pages Twig restent à
-    // la racine, ex. /vegetable). À la fin de la migration on pourra repasser à '/'.
-    history: createWebHistory('/app/'),
+    // Le SPA est servi à la racine (les pages Twig CRUD sont décommissionnées).
+    history: createWebHistory('/'),
     routes,
 });
 
