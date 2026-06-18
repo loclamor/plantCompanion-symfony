@@ -18,6 +18,19 @@ update-host:
 		$(COMPOSE_PROJECT_NAME)-nginx-1  				local.plantcompanion.fr \
 		$(COMPOSE_PROJECT_NAME)-database-1  			db-locale.plantcompanion.fr
 
+# Front (Vue 3 + Vite) — tout dans le conteneur node
+front-install:
+	docker compose -f docker-compose.yml -p $(COMPOSE_PROJECT_NAME) exec -it node npm install
+
+front-dev:
+	docker compose -f docker-compose.yml -p $(COMPOSE_PROJECT_NAME) exec -it node npx vite --host 0.0.0.0
+
+front-build:
+	docker compose -f docker-compose.yml -p $(COMPOSE_PROJECT_NAME) exec -it node npx vite build
+
+front-bash:
+	docker compose -f docker-compose.yml -p $(COMPOSE_PROJECT_NAME) exec -it node sh
+
 # Test commands
 test:
 	docker compose -f docker-compose.yml -p $(COMPOSE_PROJECT_NAME) exec -it php bin/phpunit

@@ -1,0 +1,110 @@
+/* Thème vert porté du legacy (/home/loic/perso/plant-companion/custom.css). */
+:root {
+    --main-primary: #008000;
+    --main-primary-rgb: 0, 128, 0;
+    --main-primary-darker: #006800;
+    --bs-primary: var(--main-primary);
+    --bs-primary-rgb: var(--main-primary-rgb);
+}
+
+a {
+    color: var(--main-primary);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--main-primary-darker);
+}
+
+.btn-primary {
+    background-color: var(--main-primary);
+    border-color: var(--main-primary);
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--main-primary-darker);
+    border-color: var(--main-primary-darker);
+}
+.btn-primary:focus,
+.btn-primary:active:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--main-primary-rgb), 0.5);
+}
+
+.btn-outline-primary {
+    color: var(--main-primary);
+    border-color: var(--main-primary);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+    color: #fff;
+    background-color: var(--main-primary-darker);
+    border-color: var(--main-primary-darker);
+}
+
+select:focus,
+input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--main-primary-rgb), 0.25) !important;
+}
+input[type="checkbox"]:checked {
+    accent-color: var(--main-primary);
+}
+
+a.page-link,
+.nav-link {
+    color: var(--main-primary);
+}
+a.page-link:hover,
+.nav-link:hover {
+    color: var(--main-primary-darker);
+}
+
+/* Cartes plantes */
+.center-img {
+    width: 100%;
+    height: 225px;
+    object-fit: cover;
+    object-position: center;
+}
+.photo-count-badge {
+    position: absolute;
+    right: 0;
+    border-radius: calc(0.25rem - 1px) !important;
+}
+.default-photo {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 99;
+    position: absolute;
+}
+.default-photo i {
+    background-color: #ffffffcc;
+    box-shadow: 0 0 10px 10px #ffffffcc;
+}
+
+.pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Calendrier fructification/floraison */
+td.month {
+    padding: 19px 0;
+}
+.month .month-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+}
+.month .month-container .day {
+    width: 4px;
+    height: 3px;
+}
+.month .month-container .day.fruit {
+    background-color: orange;
+}
+.month .month-container .day.fleur {
+    background-color: green;
+}

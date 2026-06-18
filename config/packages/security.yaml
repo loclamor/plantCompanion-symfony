@@ -16,6 +16,7 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            entry_point: App\Security\AppEntryPoint
             form_login:
                 login_path: app_login
                 check_path: app_login
@@ -40,6 +41,12 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
+        # API : login public, le reste exige l'authentification (entry point → 401 JSON)
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
+        # Coquille du SPA : publique (le SPA gère son propre écran de login ;
+        # l'API reste le vrai garde-fou)
+        - { path: ^/app, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }

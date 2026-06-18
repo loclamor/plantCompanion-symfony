@@ -15,6 +15,15 @@ services:
       - "8001:80"
     depends_on:
       - php
+  node:
+    image: 'node:22'
+    working_dir: /usr/src/app/assets
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "5173:5173"
+    # conteneur maintenu vivant ; on lance vite via `make front-dev` / `make front-build`
+    command: sh -c "tail -f /dev/null"
   database:
     image: 'mysql:latest'
     environment:
