@@ -1,6 +1,11 @@
 .idea
 /data/mysql/databases-folder/
 
+###> front (Vue 3 + Vite) ###
+/assets/node_modules/
+/public/build/
+###< front ###
+
 ###> liip/imagine-bundle ###
 /public/media/cache/
 ###< liip/imagine-bundle ###

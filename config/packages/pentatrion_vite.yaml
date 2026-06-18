@@ -1,0 +1,8 @@
+pentatrion_vite:
+    # Le build Vite sort dans public/build (cf. assets/vite.config.js).
+    public_directory: public
+    build_directory: build
+    # Assets servis same-origin → pas besoin de crossorigin.
+    crossorigin: false
+    # En dev, le dev server tourne dans le conteneur node ; origine vue du navigateur.
+    proxy_origin: 'http://host.docker.internal:5173'

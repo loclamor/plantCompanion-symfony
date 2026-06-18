@@ -80,8 +80,9 @@ class Photo implements UserOwnedInterface
         return $this->path;
     }
 
-    public function setPath(string $path): static
+    public function setPath(?string $path): static
     {
+        // Vich repasse path à null lors de la suppression (delete_on_remove).
         $this->path = $path;
 
         return $this;

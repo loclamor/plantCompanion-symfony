@@ -14,13 +14,15 @@ class VegetableHistory implements UserOwnedInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    // `key` est un mot réservé MySQL : on force le quoting de l'identifiant.
+    #[ORM\Column(name: '`key`', length: 255)]
     private ?string $key = null;
 
-    #[ORM\Column(length: 255)]
+    // Colonnes legacy en camelCase (base partagée) : on aligne l'entité dessus.
+    #[ORM\Column(name: 'oldValue', length: 255)]
     private ?string $oldValue = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(name: 'newValue', length: 255)]
     private ?string $newValue = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

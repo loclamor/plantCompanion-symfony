@@ -1,19 +1,22 @@
-{% extends 'base.html.twig' %}
+{% extends 'registration/layout.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Inscription — PlantCompanion{% endblock %}
 
 {% block body %}
-    <h1>Register</h1>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="h4 mb-3">Inscription</h1>
 
-    {{ form_errors(registrationForm) }}
+            {{ form_errors(registrationForm) }}
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.name) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
+            {{ form_start(registrationForm) }}
+                {{ form_row(registrationForm.name) }}
+                {{ form_row(registrationForm.plainPassword, { label: 'Mot de passe' }) }}
+                {{ form_row(registrationForm.agreeTerms) }}
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+                <button type="submit" class="btn btn-primary">S'inscrire</button>
+                <a href="/login" class="btn btn-link">Déjà un compte ? Se connecter</a>
+            {{ form_end(registrationForm) }}
+        </div>
+    </div>
 {% endblock %}

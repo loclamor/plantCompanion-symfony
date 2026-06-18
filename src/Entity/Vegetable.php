@@ -27,8 +27,9 @@ class Vegetable implements UserOwnedInterface
     #[ORM\JoinColumn(nullable: false)]
     private ?Type $type = null;
 
+    // Groupe optionnel (« Sans groupe » du legacy) ; la colonne DB l'autorise déjà.
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Group $group = null;
 
     #[ORM\ManyToOne(targetEntity: self::class)]

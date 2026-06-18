@@ -16,33 +16,25 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            form_login:
-                login_path: app_login
-                check_path: app_login
-                enable_csrf: true
-                default_target_path: app_vegetable_index
-            remember_me:
-                secret: '%kernel.secret%'
-                lifetime: 604800 # 1 week in seconds
-                path: /
-                always_remember_me: false
+            # Auth gérée par le SPA : connexion via POST /api/login (Security::login),
+            # déconnexion via POST /api/logout (Security::logout). Pas de form_login.
+            entry_point: App\Security\AppEntryPoint
             logout:
-                path: app_logout
-                # where to redirect after logout
-                target: app_login
+                # Le SPA déclenche la déconnexion par /api/logout ; ce chemin reste
+                # une URL de logout serveur de secours.
+                path: /logout
+                target: /login
 
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
+    # Note: seul le *premier* access_control correspondant s'applique.
     access_control:
-        - { path: ^/login, roles: PUBLIC_ACCESS }
+        # API : login public, le reste exige l'authentification (entry point → 401 JSON)
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
+        # Inscription (page Twig) publique
         - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/, roles: ROLE_USER }
+        # Tout le reste = coquille du SPA : publique (le SPA garde ses routes côté
+        # client, l'API reste le vrai garde-fou)
+        - { path: ^/, roles: PUBLIC_ACCESS }
 
 when@test:
     security:
