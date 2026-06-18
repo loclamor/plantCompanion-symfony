@@ -112,48 +112,42 @@ onMounted(async () => {
         </template>
     </div>
 
-    <!-- Zone imprimée : étiquettes (mise en page legacy, 14 par page A4) -->
+    <!-- Zone imprimée : étiquettes (mise en page legacy, 2 par ligne sur A4) -->
     <div class="labels-sheet">
-        <template v-for="(it, idx) in toPrint" :key="it.id">
-            <div class="plant-label card">
-                <div class="card-body">
-                    <h5 class="card-title mb-1">{{ it.name }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">
-                        {{ it.porteGreffe ?? '' }}
-                        <span class="float-end">{{ it.rusticite != null ? it.rusticite + '°C' : '' }}</span>
-                    </h6>
-                    <p class="card-text mb-0">
-                        <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
-                        <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
-                    </p>
-                </div>
+        <div v-for="it in toPrint" :key="it.id" class="plant-label card">
+            <div class="card-body">
+                <h5 class="card-title mb-1">{{ it.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">
+                    {{ it.porteGreffe ?? '' }}
+                    <span class="float-end">{{ it.rusticite != null ? it.rusticite + '°C' : '' }}</span>
+                </h6>
+                <p class="card-text mb-0">
+                    <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
+                    <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
+                </p>
             </div>
-            <div v-if="(idx + 1) % 14 === 0" class="page-break"></div>
-        </template>
+        </div>
     </div>
 </template>
 
 <style scoped>
 .labels-sheet {
-    width: 21cm;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4cm;
 }
 .plant-label {
-    width: 9.5cm;
-    height: 138px;
+    width: 8.7cm; /* 2 par ligne dans la largeur imprimable A4 (~18 cm) */
+    min-height: 3.4cm;
     overflow: hidden;
-    margin: 0 0.2cm 0.5cm;
-    display: inline-block;
-    vertical-align: top;
-}
-.page-break {
-    display: block;
 }
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 1cm;
+    }
     .plant-label {
         page-break-inside: avoid;
-    }
-    .page-break {
-        page-break-after: always;
     }
 }
 </style>
