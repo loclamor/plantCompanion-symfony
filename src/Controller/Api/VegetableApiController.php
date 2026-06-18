@@ -41,6 +41,7 @@ final class VegetableApiController extends AbstractController
         private readonly LieuRepository $lieux,
         private readonly PhotoRepository $photos,
         private readonly CacheManager $imagine,
+        private readonly \App\Service\PhotoPresenter $photoPresenter,
     ) {
     }
 
@@ -278,11 +279,7 @@ final class VegetableApiController extends AbstractController
     {
         $rel = static fn ($e) => $e ? ['id' => $e->getId(), 'name' => $e->getName()] : null;
 
-        $photoItems = array_map(fn ($p) => [
-            'id' => $p->getId(),
-            'url' => null !== $p->getRelativePath() ? $this->imagine->getBrowserPath($p->getRelativePath(), 'plant_thumb') : null,
-            'isDefault' => $v->getDefaultPhoto() && $v->getDefaultPhoto()->getId() === $p->getId(),
-        ], $photos->findByVegetable($v));
+        $photoItems = $this->photoPresenter->presentMany($photos->findByVegetable($v), $v->getDefaultPhoto());
 
         $actionItems = array_map(static fn ($a) => [
             'id' => $a->getId(),

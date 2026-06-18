@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import http from '../api/http';
+import PhotoUploader from '../components/PhotoUploader.vue';
+import PhotoGallery from '../components/PhotoGallery.vue';
 
 const props = defineProps({ id: { type: [String, Number], required: true } });
 const router = useRouter();
@@ -33,6 +35,10 @@ async function remove() {
     if (!window.confirm('Supprimer cette plante ?')) return;
     await http.delete(`/vegetables/${props.id}`);
     router.push({ name: 'vegetable-index' });
+}
+
+function onPhotosUpdated(photos) {
+    if (vegetable.value) vegetable.value.photos = photos;
 }
 
 onMounted(load);
@@ -71,17 +77,8 @@ onMounted(load);
         </table>
 
         <h2 class="mt-4">Photos</h2>
-        <div class="row">
-            <div v-for="p in vegetable.photos" :key="p.id" class="col-md-3 mb-3">
-                <div class="card" :class="{ 'border-success': p.isDefault }">
-                    <img :src="p.url || PLACEHOLDER" class="card-img-top" alt="photo" @error="onImgError">
-                    <div class="card-body p-2">
-                        <span v-if="p.isDefault" class="badge bg-success">Photo par défaut</span>
-                    </div>
-                </div>
-            </div>
-            <p v-if="!vegetable.photos?.length" class="text-muted">Aucune photo.</p>
-        </div>
+        <PhotoUploader :vegetable-id="vegetable.id" @updated="onPhotosUpdated" />
+        <PhotoGallery :photos="vegetable.photos ?? []" @updated="onPhotosUpdated" />
 
         <h2 class="mt-4">Interventions</h2>
         <table class="table">
