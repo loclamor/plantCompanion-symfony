@@ -33,6 +33,16 @@ const filtered = computed(() => items.value.filter((it) => {
 // Plantes à imprimer (dans l'ordre de la liste).
 const toPrint = computed(() => items.value.filter((it) => selected.value.has(it.id)));
 
+// Découpage en pages A4 : 14 étiquettes (2 colonnes × 7 lignes), comme le legacy.
+const PER_PAGE = 14;
+const pages = computed(() => {
+    const out = [];
+    for (let i = 0; i < toPrint.value.length; i += PER_PAGE) {
+        out.push(toPrint.value.slice(i, i + PER_PAGE));
+    }
+    return out;
+});
+
 function toggle(id) {
     const next = new Set(selected.value);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -108,43 +118,69 @@ onMounted(async () => {
                 <p v-if="filtered.length === 0" class="text-muted mb-0">Aucune plante.</p>
             </div>
 
-            <h2 class="h5">Aperçu ({{ toPrint.length }} étiquette(s))</h2>
+            <h2 class="h5">
+                Aperçu — {{ toPrint.length }} étiquette(s),
+                {{ pages.length }} page(s) A4
+            </h2>
         </template>
     </div>
 
-    <!-- Zone imprimée : étiquettes (mise en page legacy, 2 par ligne sur A4) -->
-    <div class="labels-sheet">
-        <div v-for="it in toPrint" :key="it.id" class="plant-label card">
-            <div class="card-body">
-                <h5 class="card-title mb-1">{{ it.name }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">
-                    {{ it.porteGreffe ?? '' }}
-                    <span class="float-end">{{ it.rusticite != null ? it.rusticite + '°C' : '' }}</span>
-                </h6>
-                <p class="card-text mb-0">
-                    <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
-                    <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
-                </p>
+    <!-- Zone imprimée : pages A4 (cadre pointillé à l'écran), 2 colonnes -->
+    <div v-for="(pageItems, p) in pages" :key="p" class="print-page">
+        <div class="page-grid">
+            <div v-for="it in pageItems" :key="it.id" class="plant-label card">
+                <div class="card-body">
+                    <h5 class="card-title mb-1">{{ it.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        {{ it.porteGreffe ?? '' }}
+                        <span class="float-end">{{ it.rusticite != null ? it.rusticite + '°C' : '' }}</span>
+                    </h6>
+                    <p class="card-text mb-0">
+                        <i class="bi bi-flower1"></i> {{ fleurLabel(it) }}<br>
+                        <i class="bi bi-basket"></i> {{ fructiLabel(it) }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-.labels-sheet {
-    display: flex;
-    flex-wrap: wrap;
+/* Page A4 : cadre pointillé à l'écran représentant la feuille. */
+.print-page {
+    width: 21cm;
+    max-width: 100%;
+    border: 2px dashed #bbb;
+    border-radius: 6px;
+    padding: 1cm;
+    margin: 0 auto 1.5rem;
+}
+.page-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.4cm;
 }
 .plant-label {
-    width: 8.7cm; /* 2 par ligne dans la largeur imprimable A4 (~18 cm) */
     min-height: 3.4cm;
     overflow: hidden;
+    margin: 0;
 }
 @media print {
     @page {
         size: A4 portrait;
         margin: 1cm;
+    }
+    .print-page {
+        width: auto;
+        max-width: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        margin: 0;
+        page-break-after: always;
+    }
+    .print-page:last-child {
+        page-break-after: auto;
     }
     .plant-label {
         page-break-inside: avoid;
