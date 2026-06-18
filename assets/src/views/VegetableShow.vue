@@ -41,6 +41,12 @@ function onPhotosUpdated(photos) {
     if (vegetable.value) vegetable.value.photos = photos;
 }
 
+async function removeAction(action) {
+    if (!window.confirm('Supprimer cette intervention ?')) return;
+    await http.delete(`/actions/${action.id}`);
+    await load();
+}
+
 onMounted(load);
 </script>
 
@@ -80,17 +86,26 @@ onMounted(load);
         <PhotoUploader :vegetable-id="vegetable.id" @updated="onPhotosUpdated" />
         <PhotoGallery :photos="vegetable.photos ?? []" @updated="onPhotosUpdated" />
 
-        <h2 class="mt-4">Interventions</h2>
-        <table class="table">
-            <thead><tr><th>Date</th><th>Type</th><th>Titre</th><th>Commentaire</th></tr></thead>
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <h2 class="mb-0">Interventions</h2>
+            <router-link class="btn btn-sm btn-primary" :to="{ name: 'action-new', query: { vegetable: vegetable.id } }">
+                <i class="bi bi-plus-lg"></i> Ajouter
+            </router-link>
+        </div>
+        <table class="table mt-2">
+            <thead><tr><th>Date</th><th>Type</th><th>Titre</th><th>Commentaire</th><th class="text-end">Actions</th></tr></thead>
             <tbody>
                 <tr v-for="a in vegetable.actions" :key="a.id">
                     <td>{{ fmt(a.date) }}</td>
                     <td>{{ a.typeAction }}</td>
                     <td>{{ a.title }}</td>
                     <td>{{ a.comment }}</td>
+                    <td class="text-end">
+                        <router-link class="btn btn-sm btn-outline-primary" :to="{ name: 'action-edit', params: { id: a.id } }">Éditer</router-link>
+                        <button class="btn btn-sm btn-outline-danger" @click="removeAction(a)">Supprimer</button>
+                    </td>
                 </tr>
-                <tr v-if="!vegetable.actions?.length"><td colspan="4" class="text-muted">Aucune intervention</td></tr>
+                <tr v-if="!vegetable.actions?.length"><td colspan="5" class="text-muted">Aucune intervention</td></tr>
             </tbody>
         </table>
 
