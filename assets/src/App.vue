@@ -55,7 +55,9 @@ async function logout() {
                     <li class="nav-item">
                         <router-link class="nav-link" :to="{ name: 'photo-import' }">Importer photos</router-link>
                     </li>
-                    <!-- Impression : ajoutée plus tard -->
+                    <li class="nav-item">
+                        <router-link class="nav-link" :to="{ name: 'print' }">Impression</router-link>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Paramétrage</a>
                         <ul class="dropdown-menu">

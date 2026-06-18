@@ -72,6 +72,9 @@ function clearSelection() {
 function addInterventionToSelection() {
     router.push({ name: 'action-new', query: { vegetables: [...selected.value].join(',') } });
 }
+function printLabelsForSelection() {
+    router.push({ name: 'print', query: { vegetables: [...selected.value].join(',') } });
+}
 
 onMounted(() => {
     loadTypes();
@@ -172,7 +175,10 @@ onMounted(() => {
     <div v-if="selectionCount > 0" class="selection-bar shadow">
         <span class="me-3">{{ selectionCount }} plante(s) sélectionnée(s)</span>
         <button class="btn btn-primary btn-sm me-2" @click="addInterventionToSelection">
-            <i class="bi bi-journal-plus"></i> Ajouter une intervention
+            <i class="bi bi-journal-plus"></i> Intervention
+        </button>
+        <button class="btn btn-outline-primary btn-sm me-2" @click="printLabelsForSelection">
+            <i class="bi bi-printer"></i> Étiquettes
         </button>
         <button class="btn btn-outline-secondary btn-sm" @click="clearSelection">Effacer</button>
     </div>

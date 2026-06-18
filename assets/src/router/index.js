@@ -8,6 +8,7 @@ const routes = [
     { path: '/vegetable/:id', name: 'vegetable-show', component: () => import('../views/VegetableShow.vue'), props: true },
     { path: '/vegetable/:id/edit', name: 'vegetable-edit', component: () => import('../views/VegetableForm.vue'), props: true },
     { path: '/calendrier', name: 'calendar', component: () => import('../views/CalendarView.vue') },
+    { path: '/impression', name: 'print', component: () => import('../views/PrintView.vue') },
     { path: '/photos/import', name: 'photo-import', component: () => import('../views/PhotoImport.vue') },
     { path: '/interventions', name: 'action-index', component: () => import('../views/ActionList.vue') },
     { path: '/interventions/new', name: 'action-new', component: () => import('../views/ActionForm.vue') },

@@ -108,3 +108,11 @@ td.month {
 .month .month-container .day.fleur {
     background-color: green;
 }
+
+/* Impression : ne garder que les étiquettes (cacher navbar + contrôles). */
+@media print {
+    nav.navbar,
+    .no-print {
+        display: none !important;
+    }
+}
