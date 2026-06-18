@@ -21,6 +21,15 @@ const fileInput = ref(null);
 
 const isObservation = computed(() => form.typeAction === 'observation');
 
+// Mode multi : intervention appliquée à plusieurs plantes (depuis la sélection
+// de la liste). Pas de plante unique ni de photos dans ce mode.
+const multiIds = String(route.query.vegetables ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map(Number);
+const isMulti = computed(() => !isEdit.value && multiIds.length > 0);
+const multiNames = computed(() => vegetables.value.filter((v) => multiIds.includes(v.id)));
+
 const form = reactive({
     vegetable: null,
     date: '',
@@ -88,6 +97,18 @@ async function submit() {
     saving.value = true;
     errors.value = {};
     try {
+        if (isMulti.value) {
+            await http.post('/actions/bulk', {
+                vegetables: multiIds,
+                date: form.date,
+                typeAction: form.typeAction,
+                title: form.title,
+                comment: form.comment,
+            });
+            router.push({ name: 'action-index' });
+            return;
+        }
+
         let actionId = props.id;
         if (isEdit.value) {
             await http.put(`/actions/${props.id}`, { ...form });
@@ -127,7 +148,9 @@ onMounted(async () => {
 
 <template>
     <div class="mx-auto" style="max-width: 700px">
-        <h1 class="mb-4">{{ isEdit ? 'Éditer l\'intervention' : 'Nouvelle intervention' }}</h1>
+        <h1 class="mb-4">
+            {{ isEdit ? 'Éditer l\'intervention' : (isMulti ? 'Intervention sur plusieurs plantes' : 'Nouvelle intervention') }}
+        </h1>
 
         <div v-if="loading" class="text-center my-5">
             <div class="spinner-border text-primary" role="status"></div>
@@ -137,7 +160,14 @@ onMounted(async () => {
             <div class="card-body">
                 <div v-if="errors._global" class="alert alert-danger">{{ errors._global }}</div>
 
-                <div class="mb-3">
+                <div v-if="isMulti" class="mb-3">
+                    <label class="form-label">Plantes ciblées ({{ multiNames.length }})</label>
+                    <div>
+                        <span v-for="v in multiNames" :key="v.id" class="badge bg-success me-1 mb-1">{{ v.name }}</span>
+                    </div>
+                    <div v-if="errors.vegetables" class="text-danger small mt-1">{{ errors.vegetables }}</div>
+                </div>
+                <div v-else class="mb-3">
                     <label class="form-label">Plante *</label>
                     <select v-model="form.vegetable" class="form-select" :class="{ 'is-invalid': errors.vegetable }" required>
                         <option :value="null" disabled>— Choisir —</option>
@@ -176,7 +206,7 @@ onMounted(async () => {
                     <textarea v-model="form.comment" class="form-control" rows="3"></textarea>
                 </div>
 
-                <div class="mb-3">
+                <div v-if="!isMulti" class="mb-3">
                     <label class="form-label">Photos</label>
                     <input ref="fileInput" type="file" accept="image/*" multiple class="form-control" @change="onFilesChange">
                     <div v-if="selectedFiles.length" class="form-text">

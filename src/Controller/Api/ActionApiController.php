@@ -86,6 +86,48 @@ final class ActionApiController extends AbstractController
         return new JsonResponse($this->serialize($action), Response::HTTP_CREATED);
     }
 
+    /**
+     * Ajout multiple : une même intervention appliquée à plusieurs plantes
+     * (reprend le principe du mode « groupe » legacy, sans photos).
+     */
+    #[Route('/actions/bulk', name: 'api_action_bulk', methods: ['POST'])]
+    public function bulk(Request $request, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        // Validation des champs partagés (hors plante).
+        $errors = $this->validateShared($data);
+
+        $ids = $data['vegetables'] ?? [];
+        $vegetables = [];
+        if (\is_array($ids)) {
+            foreach ($ids as $id) {
+                $v = $this->vegetables->find((int) $id);
+                if (null !== $v && $v->getUtilisateur() === $user) {
+                    $vegetables[] = $v;
+                }
+            }
+        }
+        if ([] === $vegetables) {
+            $errors['vegetables'] = 'Aucune plante valide sélectionnée.';
+        }
+
+        if ([] !== $errors) {
+            return new JsonResponse(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        foreach ($vegetables as $vegetable) {
+            $action = new Action();
+            $action->setUtilisateur($user);
+            $action->setVegetable($vegetable);
+            $this->applyShared($action, $data);
+            $this->em->persist($action);
+        }
+        $this->em->flush();
+
+        return new JsonResponse(['created' => \count($vegetables)], Response::HTTP_CREATED);
+    }
+
     #[Route('/actions/{id}', name: 'api_action_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
     public function update(Request $request, Action $action, #[CurrentUser] Utilisateur $user): JsonResponse
     {
@@ -146,13 +188,15 @@ final class ActionApiController extends AbstractController
     }
 
     /**
+     * Validation + remplissage pour une action liée à une seule plante.
+     *
      * @param array<string, mixed> $data
      *
      * @return array<string, string>
      */
     private function apply(Action $action, array $data, Utilisateur $user): array
     {
-        $errors = [];
+        $errors = $this->validateShared($data);
 
         // Plante (obligatoire, possédée)
         $vegetableId = $data['vegetable'] ?? null;
@@ -163,19 +207,42 @@ final class ActionApiController extends AbstractController
             $action->setVegetable($vegetable);
         }
 
-        $title = trim((string) ($data['title'] ?? ''));
-        if ('' === $title) {
-            $errors['title'] = 'Le titre est obligatoire.';
-        } else {
-            $action->setTitle($title);
+        if ([] === $errors) {
+            $this->applyShared($action, $data);
         }
 
-        $type = (string) ($data['typeAction'] ?? '');
-        if (!\in_array($type, Action::TYPES_ACTION, true)) {
-            $errors['typeAction'] = 'Type d\'intervention invalide.';
-        } else {
-            $action->setTypeAction($type);
+        return $errors;
+    }
+
+    /**
+     * Valide les champs partagés (titre, type), hors plante.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, string>
+     */
+    private function validateShared(array $data): array
+    {
+        $errors = [];
+        if ('' === trim((string) ($data['title'] ?? ''))) {
+            $errors['title'] = 'Le titre est obligatoire.';
         }
+        if (!\in_array((string) ($data['typeAction'] ?? ''), Action::TYPES_ACTION, true)) {
+            $errors['typeAction'] = 'Type d\'intervention invalide.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Pose les champs partagés sur l'action (titre, type, commentaire, date).
+     *
+     * @param array<string, mixed> $data
+     */
+    private function applyShared(Action $action, array $data): void
+    {
+        $action->setTitle(trim((string) $data['title']));
+        $action->setTypeAction((string) $data['typeAction']);
 
         $comment = $data['comment'] ?? null;
         $action->setComment(is_string($comment) && '' !== trim($comment) ? $comment : null);
@@ -187,7 +254,5 @@ final class ActionApiController extends AbstractController
         } catch (\Exception) {
             $action->setDate(new \DateTime());
         }
-
-        return $errors;
     }
 }

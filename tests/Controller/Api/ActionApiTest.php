@@ -118,6 +118,60 @@ class ActionApiTest extends DatabaseTestCase
         $this->assertResponseStatusCodeSame(204);
     }
 
+    public function testBulkCreatesOneActionPerVegetable(): void
+    {
+        $alice = $this->createUser('alice');
+        $bob = $this->createUser('bob');
+        $v1 = $this->createVegetable($alice, 'Tomate');
+        $v2 = $this->createVegetable($alice, 'Courgette');
+        $vBob = $this->createVegetable($bob, 'Pomme Bob');
+
+        $this->client->loginUser($alice);
+        $res = $this->json('POST', '/api/actions/bulk', [
+            'vegetables' => [$v1->getId(), $v2->getId(), $vBob->getId()], // celui de bob est ignoré
+            'typeAction' => 'taille',
+            'title' => 'Taille groupée',
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame(2, $res['created']);
+
+        $list = $this->json('GET', '/api/actions');
+        $this->assertCount(2, $list['items']);
+    }
+
+    public function testBulkRejectsInvalidSharedFields(): void
+    {
+        $alice = $this->createUser('alice');
+        $v1 = $this->createVegetable($alice, 'Tomate');
+        $this->client->loginUser($alice);
+
+        $res = $this->json('POST', '/api/actions/bulk', [
+            'vegetables' => [$v1->getId()],
+            'typeAction' => 'inexistant',
+            'title' => '',
+        ]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertArrayHasKey('title', $res['errors']);
+        $this->assertArrayHasKey('typeAction', $res['errors']);
+    }
+
+    public function testBulkWithNoValidVegetableReturns422(): void
+    {
+        $alice = $this->createUser('alice');
+        $bob = $this->createUser('bob');
+        $vBob = $this->createVegetable($bob, 'Pomme Bob');
+        $this->client->loginUser($alice);
+
+        $res = $this->json('POST', '/api/actions/bulk', [
+            'vegetables' => [$vBob->getId()],
+            'typeAction' => 'observation',
+            'title' => 'X',
+        ]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertArrayHasKey('vegetables', $res['errors']);
+    }
+
     public function testUploadPhotoToAction(): void
     {
         $alice = $this->createUser('alice');

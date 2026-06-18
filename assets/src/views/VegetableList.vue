@@ -1,7 +1,9 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import http from '../api/http';
 
+const router = useRouter();
 const PLACEHOLDER = '/plante.png';
 
 const vegetables = ref([]);
@@ -50,6 +52,25 @@ function reset() {
 function onImgError(event) {
     event.target.onerror = null;
     event.target.src = PLACEHOLDER;
+}
+
+// Sélection multiple → ajout d'une intervention sur plusieurs plantes.
+const selected = ref(new Set());
+const selectionCount = computed(() => selected.value.size);
+
+function isSelected(id) {
+    return selected.value.has(id);
+}
+function toggleSelect(id) {
+    const next = new Set(selected.value);
+    next.has(id) ? next.delete(id) : next.add(id);
+    selected.value = next;
+}
+function clearSelection() {
+    selected.value = new Set();
+}
+function addInterventionToSelection() {
+    router.push({ name: 'action-new', query: { vegetables: [...selected.value].join(',') } });
 }
 
 onMounted(() => {
@@ -104,8 +125,16 @@ onMounted(() => {
 
     <div v-else class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         <div v-for="v in vegetables" :key="v.id" class="col">
-            <router-link class="card h-100 text-decoration-none text-dark" :to="{ name: 'vegetable-show', params: { id: v.id } }">
+            <router-link class="card h-100 text-decoration-none text-dark" :class="{ 'border-success': isSelected(v.id) }" :to="{ name: 'vegetable-show', params: { id: v.id } }">
                 <div class="position-relative">
+                    <input
+                        type="checkbox"
+                        class="form-check-input vegetable-selection"
+                        :checked="isSelected(v.id)"
+                        title="Sélectionner pour une intervention groupée"
+                        @click.stop
+                        @change="toggleSelect(v.id)"
+                    >
                     <img :src="v.defaultPhotoUrl || PLACEHOLDER" class="center-img card-img-top" alt="photo" @error="onImgError">
                     <span v-if="v.photoCount > 0" class="badge bg-secondary photo-count-badge">
                         <i class="bi bi-images"></i> {{ v.photoCount }}
@@ -138,4 +167,39 @@ onMounted(() => {
             </li>
         </ul>
     </nav>
+
+    <!-- Barre flottante d'action groupée -->
+    <div v-if="selectionCount > 0" class="selection-bar shadow">
+        <span class="me-3">{{ selectionCount }} plante(s) sélectionnée(s)</span>
+        <button class="btn btn-primary btn-sm me-2" @click="addInterventionToSelection">
+            <i class="bi bi-journal-plus"></i> Ajouter une intervention
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" @click="clearSelection">Effacer</button>
+    </div>
 </template>
+
+<style scoped>
+.vegetable-selection {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 1.3rem;
+    height: 1.3rem;
+    z-index: 2;
+    cursor: pointer;
+    background-color: #fff;
+}
+.selection-bar {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 1px solid var(--main-primary);
+    border-radius: 2rem;
+    padding: 0.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    z-index: 1050;
+}
+</style>
