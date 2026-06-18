@@ -84,7 +84,7 @@ async function logout() {
                             <i class="bi bi-person-circle"></i> {{ auth.user?.name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><h6 class="dropdown-header">Connecté en tant que {{ auth.user?.name }}</h6></li>
+                            <li><router-link class="dropdown-item" :to="{ name: 'profile' }"><i class="bi bi-person-gear"></i> Profil</router-link></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="#" @click.prevent="logout"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
                         </ul>
