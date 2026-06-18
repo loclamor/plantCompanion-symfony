@@ -146,6 +146,13 @@ onMounted(async () => {
             <p class="mb-0">Glissez des photos ici, ou cliquez pour en choisir</p>
         </div>
 
+        <div class="mb-4 text-center">
+            <input ref="cameraInput" type="file" accept="image/*" capture="environment" class="d-none" @change="onPick">
+            <button class="btn btn-outline-primary" @click="$refs.cameraInput.click()">
+                <i class="bi bi-camera"></i> Prendre une photo
+            </button>
+        </div>
+
         <div v-if="allDone" class="alert alert-success">
             Toutes les photos ont été importées.
             <router-link :to="{ name: 'vegetable-index' }">Voir les plantes</router-link>
@@ -153,8 +160,13 @@ onMounted(async () => {
 
         <div v-for="item in items" :key="item.localId" class="card mb-3" :class="{ 'border-success': item.status === 'done', 'border-danger': item.status === 'error' }">
             <div class="row g-0">
-                <div class="col-md-3">
-                    <img :src="item.preview" class="img-fluid rounded-start h-100" style="object-fit: cover" alt="aperçu">
+                <div class="col-md-3 position-relative">
+                    <img :src="item.preview" class="img-fluid rounded-start h-100 w-100" style="object-fit: cover" alt="aperçu">
+                    <div v-if="item.status !== 'pending'" class="upload-overlay" :class="item.status">
+                        <i v-if="item.status === 'done'" class="bi bi-check-lg"></i>
+                        <i v-else-if="item.status === 'error'" class="bi bi-exclamation-lg"></i>
+                        <div v-else-if="item.status === 'uploading'" class="spinner-border spinner-border-sm text-white" role="status"></div>
+                    </div>
                 </div>
                 <div class="col-md-9">
                     <div class="card-body">
@@ -207,3 +219,25 @@ onMounted(async () => {
         </div>
     </template>
 </template>
+
+<style scoped>
+/* Voile de statut sur la vignette (idée reprise de upload.css legacy). */
+.upload-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2rem;
+}
+.upload-overlay.uploading {
+    background: rgba(0, 0, 0, 0.45);
+}
+.upload-overlay.done {
+    background: rgba(0, 105, 0, 0.5);
+}
+.upload-overlay.error {
+    background: rgba(105, 0, 0, 0.5);
+}
+</style>
