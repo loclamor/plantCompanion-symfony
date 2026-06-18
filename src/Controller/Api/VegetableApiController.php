@@ -87,7 +87,7 @@ final class VegetableApiController extends AbstractController
             $this->vegetables->findByUser($user),
         );
 
-        return new JsonResponse(['items' => $items]);
+        return new JsonResponse(\App\Service\Utf8::clean(['items' => $items]));
     }
 
     #[Route('/{id}', name: 'api_vegetable_show', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -271,14 +271,14 @@ final class VegetableApiController extends AbstractController
      */
     private function listItem(Vegetable $v): array
     {
-        return [
+        return \App\Service\Utf8::clean([
             'id' => $v->getId(),
             'name' => $v->getName(),
             'rusticite' => $v->getRusticite(),
             'type' => $v->getType() ? ['id' => $v->getType()->getId(), 'name' => $v->getType()->getName()] : null,
             'defaultPhotoUrl' => $this->thumbUrl($v->getDefaultPhoto()),
             'photoCount' => \count($this->photos->findByVegetable($v)),
-        ];
+        ]);
     }
 
     /**
@@ -305,7 +305,7 @@ final class VegetableApiController extends AbstractController
             'newValue' => $h->getNewValue(),
         ], $histories->findByVegetable($v));
 
-        return [
+        return \App\Service\Utf8::clean([
             'id' => $v->getId(),
             'name' => $v->getName(),
             'nomLatin' => $v->getNomLatin(),
@@ -328,6 +328,6 @@ final class VegetableApiController extends AbstractController
             'photos' => $photoItems,
             'actions' => $actionItems,
             'histories' => $historyItems,
-        ];
+        ]);
     }
 }

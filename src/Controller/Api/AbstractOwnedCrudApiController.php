@@ -43,16 +43,16 @@ abstract class AbstractOwnedCrudApiController extends AbstractController
 
     protected function doList(Utilisateur $user): JsonResponse
     {
-        return new JsonResponse([
+        return new JsonResponse(\App\Service\Utf8::clean([
             'items' => array_map(fn ($e) => $this->serialize($e), $this->getRepository()->findByUser($user)),
-        ]);
+        ]));
     }
 
     protected function doShow(UserOwnedInterface $entity): JsonResponse
     {
         $this->denyAccessUnlessGranted(OwnerVoter::VIEW, $entity);
 
-        return new JsonResponse($this->serialize($entity));
+        return new JsonResponse(\App\Service\Utf8::clean($this->serialize($entity)));
     }
 
     protected function doCreate(Request $request, Utilisateur $user): JsonResponse
@@ -68,7 +68,7 @@ abstract class AbstractOwnedCrudApiController extends AbstractController
         $this->em->persist($entity);
         $this->em->flush();
 
-        return new JsonResponse($this->serialize($entity), Response::HTTP_CREATED);
+        return new JsonResponse(\App\Service\Utf8::clean($this->serialize($entity)), Response::HTTP_CREATED);
     }
 
     protected function doUpdate(Request $request, UserOwnedInterface $entity, Utilisateur $user): JsonResponse
@@ -83,7 +83,7 @@ abstract class AbstractOwnedCrudApiController extends AbstractController
 
         $this->em->flush();
 
-        return new JsonResponse($this->serialize($entity));
+        return new JsonResponse(\App\Service\Utf8::clean($this->serialize($entity)));
     }
 
     protected function doDelete(UserOwnedInterface $entity): JsonResponse

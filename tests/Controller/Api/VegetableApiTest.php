@@ -61,6 +61,22 @@ class VegetableApiTest extends DatabaseTestCase
         $this->assertSame(1, $data['total']);
     }
 
+    public function testListRecoversLatin1Names(): void
+    {
+        $alice = $this->createUser('alice');
+        // Nom encodé en latin1 (octets invalides UTF-8), comme la base legacy.
+        $latin1Name = mb_convert_encoding('Amandier Aï', 'Windows-1252', 'UTF-8');
+        $v = $this->createVegetable($alice, 'tmp');
+        $v->setName($latin1Name);
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+        $data = $this->jsonRequest('GET', '/api/vegetables');
+
+        $this->assertResponseIsSuccessful(); // pas de 500 « Malformed UTF-8 »
+        $this->assertContains('Amandier Aï', array_column($data['items'], 'name'));
+    }
+
     public function testCreateThenShow(): void
     {
         $alice = $this->createUser('alice');

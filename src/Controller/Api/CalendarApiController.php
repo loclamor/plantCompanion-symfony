@@ -47,7 +47,7 @@ final class CalendarApiController extends AbstractController
             'fructi' => $this->range($v->getMoisFructiDebut(), $v->getMoisFructiFin(), $v->getPFructi()),
         ], $vegetables);
 
-        return new JsonResponse(['rows' => $rows]);
+        return new JsonResponse(\App\Service\Utf8::clean(['rows' => $rows]));
     }
 
     /**

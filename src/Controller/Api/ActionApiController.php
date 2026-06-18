@@ -34,14 +34,14 @@ final class ActionApiController extends AbstractController
     {
         $v = $a->getVegetable();
 
-        return [
+        return \App\Service\Utf8::clean([
             'id' => $a->getId(),
             'date' => $a->getDate()?->format(\DateTimeInterface::ATOM),
             'typeAction' => $a->getTypeAction(),
             'title' => $a->getTitle(),
             'comment' => $a->getComment(),
             'vegetable' => $v ? ['id' => $v->getId(), 'name' => $v->getName()] : null,
-        ];
+        ]);
     }
 
     #[Route('/action-types', name: 'api_action_types', methods: ['GET'])]
