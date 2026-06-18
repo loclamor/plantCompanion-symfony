@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
     libxslt1-dev \
     acl
 
+# gd doit être configuré AVEC jpeg/freetype, sinon imagecreatefromjpeg() absent
+# (les libs sont présentes mais l'extension les ignore sans cette étape).
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN docker-php-ext-install zip intl gd pdo_mysql exif
 
 RUN pecl install pcov && docker-php-ext-enable pcov
