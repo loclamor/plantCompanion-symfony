@@ -2,10 +2,12 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Action;
 use App\Entity\Photo;
 use App\Entity\Utilisateur;
 use App\Entity\Vegetable;
 use App\Repository\PhotoRepository;
+use App\Repository\VegetableRepository;
 use App\Security\Voter\OwnerVoter;
 use App\Service\PhotoPresenter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,6 +32,7 @@ final class PhotoApiController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly PhotoRepository $photos,
         private readonly PhotoPresenter $presenter,
+        private readonly VegetableRepository $vegetables,
     ) {
     }
 
@@ -108,5 +111,71 @@ final class PhotoApiController extends AbstractController
         return null !== $vegetable
             ? new JsonResponse($this->listPayload($vegetable))
             : new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Import par lot (principe de l'écran uploadMultipleV2 legacy) : une photo +
+     * son affectation. Rattache la photo à une plante ; si un type d'action est
+     * fourni (≠ « Sans action »), crée aussi l'intervention liée. Une requête
+     * par photo (le front boucle), pas d'orphelins.
+     */
+    #[Route('/photos/import', name: 'api_photo_import', methods: ['POST'])]
+    public function import(Request $request, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        $file = $request->files->get('image');
+        if (!$file instanceof UploadedFile || !str_starts_with((string) $file->getMimeType(), 'image/')) {
+            return new JsonResponse(['message' => 'Image manquante ou invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $vegetableId = $request->request->get('vegetable');
+        $vegetable = ('' !== (string) $vegetableId) ? $this->vegetables->find((int) $vegetableId) : null;
+        if (null === $vegetable || $vegetable->getUtilisateur() !== $user) {
+            return new JsonResponse(['errors' => ['vegetable' => 'Plante invalide ou obligatoire.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $photo = new Photo();
+        $photo->setUtilisateur($user);
+        $photo->setVegetable($vegetable);
+        $photo->setImageFile($file);
+
+        // Intervention optionnelle.
+        $typeAction = (string) $request->request->get('typeAction', '');
+        $actionId = null;
+        if ('' !== $typeAction && 'none' !== $typeAction) {
+            if (!\in_array($typeAction, Action::TYPES_ACTION, true)) {
+                return new JsonResponse(['errors' => ['typeAction' => 'Type d\'intervention invalide.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $title = trim((string) $request->request->get('title', ''));
+            if ('' === $title) {
+                return new JsonResponse(['errors' => ['title' => 'Le titre est obligatoire.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $action = new Action();
+            $action->setUtilisateur($user);
+            $action->setVegetable($vegetable);
+            $action->setTypeAction($typeAction);
+            $action->setTitle($title);
+            $comment = (string) $request->request->get('comment', '');
+            $action->setComment('' !== trim($comment) ? $comment : null);
+            $dateRaw = (string) $request->request->get('date', '');
+            try {
+                $action->setDate('' !== $dateRaw ? new \DateTime($dateRaw) : new \DateTime());
+            } catch (\Exception) {
+                $action->setDate(new \DateTime());
+            }
+            $this->em->persist($action);
+            $photo->setAction($action);
+
+            $this->em->persist($photo);
+            $this->em->flush();
+            $actionId = $action->getId();
+
+            return new JsonResponse(['photoId' => $photo->getId(), 'actionId' => $actionId], Response::HTTP_CREATED);
+        }
+
+        $this->em->persist($photo);
+        $this->em->flush();
+
+        return new JsonResponse(['photoId' => $photo->getId(), 'actionId' => null], Response::HTTP_CREATED);
     }
 }

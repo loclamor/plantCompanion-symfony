@@ -87,6 +87,59 @@ class VegetablePhotoApiTest extends DatabaseTestCase
         $this->assertResponseStatusCodeSame(422);
     }
 
+    public function testImportPhotoWithIntervention(): void
+    {
+        $alice = $this->createUser('alice');
+        $vegetable = $this->createVegetable($alice, 'Tomate');
+        $vegetableId = $vegetable->getId();
+        $this->client->loginUser($alice);
+
+        $this->client->request(
+            'POST',
+            '/api/photos/import',
+            parameters: [
+                'vegetable' => $vegetableId,
+                'date' => '2024-05-01',
+                'typeAction' => 'observation',
+                'title' => 'Fleurs',
+                'comment' => 'Belle floraison',
+            ],
+            files: ['image' => $this->makePngUpload('imp.png')],
+        );
+        $this->assertResponseStatusCodeSame(201);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertNotNull($data['photoId']);
+        $this->assertNotNull($data['actionId']);
+
+        // Photo rattachée à la plante + action créée et liée.
+        $this->em->clear();
+        $photos = $this->em->getRepository(\App\Entity\Photo::class)->findBy(['vegetable' => $vegetableId]);
+        $this->assertCount(1, $photos);
+        $this->assertSame($data['actionId'], $photos[0]->getAction()?->getId());
+
+        $this->cleanupVegetablePhotos($vegetableId);
+    }
+
+    public function testImportPhotoWithoutInterventionSansAction(): void
+    {
+        $alice = $this->createUser('alice');
+        $vegetable = $this->createVegetable($alice, 'Tomate');
+        $vegetableId = $vegetable->getId();
+        $this->client->loginUser($alice);
+
+        $this->client->request(
+            'POST',
+            '/api/photos/import',
+            parameters: ['vegetable' => $vegetableId, 'typeAction' => 'none'],
+            files: ['image' => $this->makePngUpload('imp.png')],
+        );
+        $this->assertResponseStatusCodeSame(201);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertNull($data['actionId']);
+
+        $this->cleanupVegetablePhotos($vegetableId);
+    }
+
     public function testCannotUploadToOthersVegetable(): void
     {
         $alice = $this->createUser('alice');

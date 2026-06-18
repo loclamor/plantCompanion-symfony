@@ -7,6 +7,7 @@ const routes = [
     { path: '/vegetable/new', name: 'vegetable-new', component: () => import('../views/VegetableForm.vue') },
     { path: '/vegetable/:id', name: 'vegetable-show', component: () => import('../views/VegetableShow.vue'), props: true },
     { path: '/vegetable/:id/edit', name: 'vegetable-edit', component: () => import('../views/VegetableForm.vue'), props: true },
+    { path: '/photos/import', name: 'photo-import', component: () => import('../views/PhotoImport.vue') },
     { path: '/interventions', name: 'action-index', component: () => import('../views/ActionList.vue') },
     { path: '/interventions/new', name: 'action-new', component: () => import('../views/ActionForm.vue') },
     { path: '/interventions/:id/edit', name: 'action-edit', component: () => import('../views/ActionForm.vue'), props: true },
