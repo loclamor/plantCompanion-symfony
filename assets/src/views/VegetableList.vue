@@ -127,14 +127,14 @@ onMounted(() => {
         <div v-for="v in vegetables" :key="v.id" class="col">
             <router-link class="card h-100 text-decoration-none text-dark plant-card" :class="{ selected: isSelected(v.id) }" :to="{ name: 'vegetable-show', params: { id: v.id } }">
                 <div class="position-relative">
-                    <input
-                        type="checkbox"
-                        class="form-check-input card-select"
-                        :checked="isSelected(v.id)"
-                        title="Sélectionner pour une intervention groupée"
-                        @click.stop
-                        @change="toggleSelect(v.id)"
-                    >
+                    <label class="select-zone" title="Sélectionner pour une intervention groupée" @click.stop>
+                        <input
+                            type="checkbox"
+                            class="form-check-input card-select"
+                            :checked="isSelected(v.id)"
+                            @change="toggleSelect(v.id)"
+                        >
+                    </label>
                     <img :src="v.defaultPhotoUrl || PLACEHOLDER" class="center-img card-img-top" alt="photo" @error="onImgError">
                     <span v-if="v.photoCount > 0" class="badge bg-secondary photo-count-badge">
                         <i class="bi bi-images"></i> {{ v.photoCount }}
@@ -179,14 +179,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.card-select {
+/* Zone cliquable élargie autour de la case : absorbe les clics proches et
+   bloque la navigation vers la fiche. */
+.select-zone {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    z-index: 2;
+    cursor: pointer;
+    margin: 0;
+}
+.card-select {
     width: 1.25rem;
     height: 1.25rem;
     margin: 0;
-    z-index: 2;
     cursor: pointer;
     box-shadow: 0 0 0 2px #fff;
 }
