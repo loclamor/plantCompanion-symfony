@@ -7,6 +7,10 @@ import symfonyPlugin from 'vite-plugin-symfony';
 export default defineConfig({
     root: '.',
     base: '/build/',
+    // Version applicative injectée au build (tag Git en CI, 'dev' en local).
+    define: {
+        __APP_VERSION__: JSON.stringify(process.env.APP_VERSION ?? 'dev'),
+    },
     plugins: [
         vue(),
         symfonyPlugin(),

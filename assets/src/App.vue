@@ -10,6 +10,9 @@ const router = useRouter();
 
 const isAuth = computed(() => auth.isAuthenticated);
 
+// Version injectée au build par Vite (tag Git en prod, 'dev' en local).
+const appVersion = __APP_VERSION__;
+
 async function loadGroupData() {
     if (isAuth.value) {
         await Promise.all([groups.fetchGroups(), groups.fetchCurrent()]);
@@ -97,6 +100,10 @@ async function logout() {
     <div class="container">
         <router-view />
     </div>
+
+    <footer class="text-center text-muted small py-3 mt-4">
+        PlantCompanion · <span class="font-monospace">{{ appVersion }}</span>
+    </footer>
 </template>
 
 <style scoped>

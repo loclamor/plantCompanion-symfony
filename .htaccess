@@ -1,0 +1,21 @@
+# www/ = racine web fixe. Le projet complet est uploadé ici, mais l'application
+# n'est servie QUE depuis public/. Toute requête est réécrite vers public/ :
+# les sources (vendor/, config/, src/, .env.local…) ne sont donc pas accessibles
+# par le web (l'URL /vendor/... est réécrite en /public/vendor/... qui n'existe pas).
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Évite la boucle : ne pas re-préfixer ce qui est déjà sous /public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /public/$1 [L]
+</IfModule>
+
+# Ceinture + bretelles : refuse l'accès direct aux fichiers sensibles même si
+# mod_rewrite est indisponible.
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+<FilesMatch "\.(ya?ml|lock|dist|md|json)$">
+    Require all denied
+</FilesMatch>

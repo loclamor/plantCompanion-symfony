@@ -1,0 +1,82 @@
+name: Deploy (FTP) on tag
+
+# Déclenché à la création d'un tag de version (v1.2.3, v2.0.0, …).
+# Build prod (composer --no-dev + Vite, version = nom du tag) puis dépôt FTP.
+# Les migrations Doctrine ne sont PAS jouées ici (base partagée / données
+# sensibles) : à lancer manuellement via public/_migrate.php après backup.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, iconv, gd, pdo_mysql, exif, intl, zip
+          tools: composer:v2
+
+      - name: Composer install (prod, sans scripts)
+        # --no-scripts : le cache prod se reconstruit à la 1re requête sur le serveur ;
+        # aucun bundle ne publie d'assets publics → assets:install inutile.
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: assets/package-lock.json
+
+      - name: Build front (version = tag)
+        working-directory: assets
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Déploiement FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          # Répertoire racine du site sur le serveur (ex: /www/). Selon l'hébergeur,
+          # le login FTP arrive déjà dans www/ -> mettre alors ./
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # NE PAS supprimer/écraser les données et la config serveur.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            assets/**
+            tests/**
+            var/**
+            .env.local
+            public/.user.ini
+            public/_migrate.php
+            public/media/**
+            public/uploads/**
+            **/Makefile
+            **/docker-compose.yml
+            **/.docker/**
+            **/phpunit*
+            # Fichiers présents sur le serveur, hors repo, à NE PAS toucher :
+            onwork.html
+            .old
+            .old/**
