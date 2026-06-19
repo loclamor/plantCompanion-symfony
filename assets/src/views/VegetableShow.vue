@@ -31,6 +31,24 @@ async function load() {
     }
 }
 
+// Retour à la liste en restaurant filtres + pagination : la liste mémorise son
+// URL dans sessionStorage à chaque visite, donc on la rejoue quel que soit le
+// chemin (y compris après édition → sauvegarde → fiche). Fallback : liste propre
+// si on est arrivé en lien direct sans avoir vu la liste cette session.
+function backToList() {
+    let saved = null;
+    try {
+        saved = sessionStorage.getItem('vegetableListUrl');
+    } catch {
+        /* sessionStorage indisponible. */
+    }
+    if (saved) {
+        router.push(saved);
+    } else {
+        router.push({ name: 'vegetable-index' });
+    }
+}
+
 async function remove() {
     if (!window.confirm('Supprimer cette plante ?')) return;
     await http.delete(`/vegetables/${props.id}`);
@@ -57,7 +75,18 @@ onMounted(load);
 
     <div v-else-if="vegetable">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="mb-0">{{ vegetable.name }}</h1>
+            <div class="d-flex align-items-center gap-2">
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary back-btn"
+                    @click="backToList"
+                    title="Retour à la liste"
+                    aria-label="Retour à la liste"
+                >
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <h1 class="mb-0">{{ vegetable.name }}</h1>
+            </div>
             <div>
                 <router-link class="btn btn-outline-primary" :to="{ name: 'vegetable-edit', params: { id: vegetable.id } }">Éditer</router-link>
                 <button class="btn btn-outline-danger" @click="remove">Supprimer</button>
@@ -122,7 +151,21 @@ onMounted(load);
                 <tr v-if="!vegetable.histories?.length"><td colspan="4" class="text-muted">Aucune modification enregistrée</td></tr>
             </tbody>
         </table>
-
-        <router-link class="btn btn-link ps-0" :to="{ name: 'vegetable-index' }">← Retour à la liste</router-link>
     </div>
 </template>
+
+<style scoped>
+/* Bouton retour rond, calibré pour s'aligner à gauche du titre. */
+.back-btn {
+    flex: 0 0 auto;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+</style>

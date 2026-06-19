@@ -9,6 +9,22 @@ const router = useRouter();
 const groupStore = useGroupStore();
 
 const isEdit = computed(() => props.id != null);
+
+// Annuler : retour au détail en édition ; en création, retour à la liste en
+// restaurant filtres + pagination (URL mémorisée par la liste dans sessionStorage).
+function cancel() {
+    if (isEdit.value) {
+        router.push({ name: 'vegetable-show', params: { id: props.id } });
+        return;
+    }
+    let saved = null;
+    try {
+        saved = sessionStorage.getItem('vegetableListUrl');
+    } catch {
+        /* sessionStorage indisponible. */
+    }
+    router.push(saved || { name: 'vegetable-index' });
+}
 const loading = ref(true);
 const saving = ref(false);
 const errors = ref({});
@@ -332,7 +348,7 @@ onMounted(async () => {
 
             <div class="d-flex gap-2 mb-5">
                 <button class="btn btn-primary px-4" :disabled="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer' }}</button>
-                <router-link class="btn btn-outline-secondary" :to="{ name: 'vegetable-index' }">Annuler</router-link>
+                <button type="button" class="btn btn-outline-secondary" @click="cancel">Annuler</button>
             </div>
         </form>
     </div>

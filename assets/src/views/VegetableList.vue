@@ -124,6 +124,13 @@ watch(
     () => {
         syncFiltersFromQuery();
         load();
+        // Mémorise l'URL liste courante (filtres + page) pour le « retour à la liste »
+        // depuis la fiche, même après un détour édition/sauvegarde.
+        try {
+            sessionStorage.setItem('vegetableListUrl', route.fullPath);
+        } catch {
+            /* sessionStorage indisponible : on ignore. */
+        }
     },
     { immediate: true },
 );
