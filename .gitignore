@@ -6,6 +6,13 @@
 /public/build/
 ###< front ###
 
+###> deploy (FTP) ###
+# Script de migration jetable — token dedans, ne jamais committer.
+/public/_migrate.php
+# Procédure de déploiement (token en clair dedans).
+/DEPLOY.md
+###< deploy ###
+
 ###> liip/imagine-bundle ###
 /public/media/cache/
 ###< liip/imagine-bundle ###

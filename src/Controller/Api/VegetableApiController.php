@@ -271,13 +271,18 @@ final class VegetableApiController extends AbstractController
      */
     private function listItem(Vegetable $v): array
     {
+        $photos = $this->photos->findByVegetable($v);
+        // Vignette : photo par défaut si définie, sinon la première photo disponible
+        // (le front retombe sur l'image fallback si null).
+        $thumb = $v->getDefaultPhoto() ?? ($photos[0] ?? null);
+
         return \App\Service\Utf8::clean([
             'id' => $v->getId(),
             'name' => $v->getName(),
             'rusticite' => $v->getRusticite(),
             'type' => $v->getType() ? ['id' => $v->getType()->getId(), 'name' => $v->getType()->getName()] : null,
-            'defaultPhotoUrl' => $this->thumbUrl($v->getDefaultPhoto()),
-            'photoCount' => \count($this->photos->findByVegetable($v)),
+            'defaultPhotoUrl' => $this->thumbUrl($thumb),
+            'photoCount' => \count($photos),
         ]);
     }
 

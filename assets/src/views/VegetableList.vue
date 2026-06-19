@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, reactive, ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import http from '../api/http';
 
 const router = useRouter();
+const route = useRoute();
 const PLACEHOLDER = '/plante.png';
 
 const vegetables = ref([]);
@@ -13,14 +14,27 @@ const page = ref(1);
 const pages = ref(1);
 const loading = ref(false);
 
+// Brouillon des filtres lié au formulaire ; l'état appliqué vit dans l'URL (query).
 const filters = reactive({ q: '', type: '', sort: 'name', dir: 'asc' });
+
+function syncFiltersFromQuery() {
+    filters.q = typeof route.query.q === 'string' ? route.query.q : '';
+    filters.type = route.query.type != null ? String(route.query.type) : '';
+    filters.sort = typeof route.query.sort === 'string' ? route.query.sort : 'name';
+    filters.dir = route.query.dir === 'desc' ? 'desc' : 'asc';
+}
+
+function queryPage() {
+    const p = parseInt(route.query.page, 10);
+    return Number.isInteger(p) && p > 0 ? p : 1;
+}
 
 async function loadTypes() {
     const { data } = await http.get('/types');
     types.value = data.items ?? data;
 }
 
-async function load(targetPage = 1) {
+async function load() {
     loading.value = true;
     try {
         const { data } = await http.get('/vegetables', {
@@ -29,7 +43,7 @@ async function load(targetPage = 1) {
                 type: filters.type || undefined,
                 sort: filters.sort,
                 dir: filters.dir,
-                page: targetPage,
+                page: queryPage(),
             },
         });
         vegetables.value = data.items;
@@ -41,12 +55,38 @@ async function load(targetPage = 1) {
     }
 }
 
+// Query URL à partir des filtres courants (valeurs par défaut omises → URL propre).
+function buildQuery(targetPage) {
+    const query = {};
+    if (filters.q) query.q = filters.q;
+    if (filters.type) query.type = String(filters.type);
+    if (filters.sort !== 'name') query.sort = filters.sort;
+    if (filters.dir !== 'asc') query.dir = filters.dir;
+    if (targetPage > 1) query.page = String(targetPage);
+    return query;
+}
+
+// Pousse l'état dans l'URL ; le watcher sur route.query recharge la liste.
+// (back/forward navigateur rejoue donc filtres + page.)
+function navigate(targetPage) {
+    router.push({ name: 'vegetable-index', query: buildQuery(targetPage) }).catch(() => {});
+}
+
+function submit() {
+    navigate(1);
+}
+
 function reset() {
     filters.q = '';
     filters.type = '';
     filters.sort = 'name';
     filters.dir = 'asc';
-    load(1);
+    navigate(1);
+}
+
+function goPage(targetPage) {
+    if (targetPage < 1 || targetPage > pages.value) return;
+    navigate(targetPage);
 }
 
 function onImgError(event) {
@@ -76,10 +116,17 @@ function printLabelsForSelection() {
     router.push({ name: 'print', query: { vegetables: [...selected.value].join(',') } });
 }
 
-onMounted(() => {
-    loadTypes();
-    load(1);
-});
+loadTypes();
+// La query URL pilote la liste : au montage (immediate) et à chaque changement
+// (filtre, pagination, back/forward navigateur).
+watch(
+    () => route.query,
+    () => {
+        syncFiltersFromQuery();
+        load();
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -90,7 +137,7 @@ onMounted(() => {
         </router-link>
     </div>
 
-    <form class="row g-2 mb-3" @submit.prevent="load(1)">
+    <form class="row g-2 mb-3" @submit.prevent="submit">
         <div class="col-auto">
             <input v-model="filters.q" type="text" class="form-control" placeholder="Rechercher un nom">
         </div>
@@ -162,11 +209,11 @@ onMounted(() => {
     <nav v-if="pages > 1" class="mt-3">
         <ul class="pagination">
             <li class="page-item" :class="{ disabled: page <= 1 }">
-                <a class="page-link" href="#" @click.prevent="load(page - 1)">Précédent</a>
+                <a class="page-link" href="#" @click.prevent="goPage(page - 1)">Précédent</a>
             </li>
             <li class="page-item disabled"><span class="page-link">{{ page }} / {{ pages }}</span></li>
             <li class="page-item" :class="{ disabled: page >= pages }">
-                <a class="page-link" href="#" @click.prevent="load(page + 1)">Suivant</a>
+                <a class="page-link" href="#" @click.prevent="goPage(page + 1)">Suivant</a>
             </li>
         </ul>
     </nav>

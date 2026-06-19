@@ -4,16 +4,13 @@ liip_imagine:
     # FilterExtension dépréciée, dont getFunctions() est vide en 2.17).
     twig:
         mode: lazy
-    # Les originaux sont résolus sous public/ (public/uploads -> ../uploads).
-    # On ajoute le vrai dossier uploads comme data_root : sans lui, la validation
-    # realpath de Liip rejette les fichiers atteints via le symlink (realpath hors
-    # de public/). Les deux racines permettent de localiser ET valider.
+    # Les originaux sont stockés dans public/uploads (vrai dossier, plus de symlink) :
+    # une seule data_root suffit, le realpath des fichiers reste sous public/.
     loaders:
         default:
             filesystem:
                 data_root:
                     - '%kernel.project_dir%/public'
-                    - '%kernel.project_dir%/uploads'
     filter_sets:
         # Vignette pour les listes / galeries
         plant_thumb:

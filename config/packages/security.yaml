@@ -17,7 +17,11 @@ security:
             lazy: true
             provider: app_user_provider
             # Auth gérée par le SPA : connexion via POST /api/login (Security::login),
-            # déconnexion via POST /api/logout (Security::logout). Pas de form_login.
+            # déconnexion via POST /api/logout (Security::logout).
+            # form_login est déclaré uniquement pour enregistrer l'authenticator que
+            # Security::login($user, 'form_login', 'main') cible ; son listener
+            # (check_path /login_check par défaut) n'est jamais appelé par le SPA.
+            form_login: true
             entry_point: App\Security\AppEntryPoint
             logout:
                 # Le SPA déclenche la déconnexion par /api/logout ; ce chemin reste
