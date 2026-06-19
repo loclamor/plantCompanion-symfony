@@ -55,7 +55,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           # Répertoire racine du site sur le serveur (ex: /www/). Selon l'hébergeur,
           # le login FTP arrive déjà dans www/ -> mettre alors ./
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
