@@ -9,10 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ActionRepository::class)]
 class Action implements UserOwnedInterface
 {
-    /** Types d'intervention (cf. ancien projet, Model_Action::$TYPES_ACTION). */
+    /** Types d'intervention supportés. */
     public const TYPES_ACTION = ['observation', 'ajout_engrais', 'taille', 'rempotage', 'ceuillette'];
 
-    /** Titres possibles d'une observation (cf. Model_Action::$TITLE_OBSERVATION). */
+    /** Titres possibles d'une observation. */
     public const TITRES_OBSERVATION = ['Fleurs', 'Fruits', 'Maladie', 'Auxiliaire', 'Ravageur', 'nouvelle_feuille'];
 
     #[ORM\Id]

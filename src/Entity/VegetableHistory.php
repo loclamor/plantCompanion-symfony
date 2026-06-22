@@ -18,7 +18,7 @@ class VegetableHistory implements UserOwnedInterface
     #[ORM\Column(name: '`key`', length: 255)]
     private ?string $key = null;
 
-    // Colonnes legacy en camelCase (base partagée) : on aligne l'entité dessus.
+    // Colonnes en camelCase (schéma hérité) : on aligne l'entité dessus.
     #[ORM\Column(name: 'oldValue', length: 255)]
     private ?string $oldValue = null;
 

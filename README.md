@@ -4,7 +4,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php)](https://php.net)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.5-4FC08D?logo=vuedotjs)](https://vuejs.org)
 
-PlantCompanion est une application de gestion de plantes et de jardinage, migree depuis un systeme legacy PHP natif vers Symfony 7.4 LTS avec un frontend moderne en Vue 3.
+PlantCompanion est une application Symfony 7.4 LTS de gestion de plantes et de jardinage, avec un frontend moderne en Vue 3.
 
 ---
 
