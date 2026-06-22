@@ -8,30 +8,30 @@ PlantCompanion est une application Symfony 7.4 LTS de gestion de plantes et de j
 
 ---
 
-## Fonctionnalites
+## Fonctionnalités
 
 ### Gestion des Plantes
-- CRUD complet des vegetaux avec historique des modifications
+- CRUD complet des végétaux avec historique des modifications
 - Classification par type, groupe, lieu d'origine
 - Gestion des porte-greffes
-- Suivi des periodes de floraison et fructification
-- Calendrier de recolte personnalise
+- Suivi des périodes de floraison et fructification
+- Calendrier de récolte personnalisé
 
 ### Gestion des Photos
 - Upload multiple de photos
-- Generation automatique de miniatures (250x250, 900x900)
-- Extraction des metadonnees EXIF (dates)
-- Definition de photos par defaut
+- Génération automatique de miniatures (250x250, 900x900)
+- Extraction des métadonnées EXIF (dates)
+- Définition de photos par défaut
 - Galerie d'images par plante
 
 ### Gestion des Utilisateurs
-- Systeme d'authentification securise
+- Système d'authentification sécurisé
 - Scoping multi-utilisateur
-- Selecteur de groupe courant
+- Sélecteur de groupe courant
 - Historique des actions et modifications
 
 ### Interventions et Suivi
-- Enregistrement des actions (plantations, recoltes, observations)
+- Enregistrement des actions (plantations, récoltes, observations)
 - Historique automatique des modifications
 - Filtres par date, type, plante
 
@@ -47,7 +47,7 @@ Infra: Docker (PHP 8.3, Nginx, Node 22, MySQL)
 
 ## Installation
 
-### Prequis
+### Prérequis
 - Docker et Docker Compose
 - Git
 
@@ -57,24 +57,24 @@ git clone https://github.com/loclamor/plantCompanion-symfony.git
 cd plantCompanion-symfony
 ```
 
-### Demarrer l'Environnement
+### Démarrer l'Environnement
 ```bash
 make build
 make up
 ```
 
-### Installer les Dependances
+### Installer les Dépendances
 ```bash
 docker compose exec php composer install
 make front-install
 ```
 
-### Demarrer le Frontend
+### Démarrer le Frontend
 ```bash
 make front-dev
 ```
 
-### Acceder a l'Application
+### Accéder à l'Application
 - Backend: http://localhost:8001
 - Frontend Dev: http://localhost:5173
 - API: http://localhost:8001/api
@@ -84,12 +84,12 @@ make front-dev
 ## Commandes Utiles
 
 make build - Build des conteneurs Docker
-make up - Demarrer tous les services
-make down - Arreter tous les services
+make up - Démarrer tous les services
+make down - Arrêter tous les services
 make bash - Shell dans le conteneur PHP
 make front-dev - Lancer Vite en mode dev
 make front-build - Build du frontend
-make test - Executer les tests
+make test - Exécuter les tests
 make test-api - Tests API uniquement
 
 ---
@@ -106,7 +106,7 @@ plantCompanion-symfony/
 |   +-- nginx/Dockerfile
 +-- src/
 |   +-- Controller/Api/      # API REST JSON
-|   +-- Entity/              # Entites Doctrine
+|   +-- Entity/              # Entités Doctrine
 |   +-- Repository/          # Repositories
 |   +-- Security/Voter/      # Voters
 |   +-- Service/             # Services
