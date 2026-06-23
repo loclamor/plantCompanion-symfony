@@ -164,15 +164,32 @@ saisons clôturées).
   `assets/src/App.vue`, `assets/src/router/index.js`, `assets/src/views/saison/*`,
   `tests/Controller/Api/SaisonApiTest.php`, `tests/Service/SeasonGuardTest.php`.
 
-### Phase 3 — Semis (scopé saison, consomme la grainothèque)
-- Entité `Semis` (+ migration).
-- API `SemisApiController` (calquer `VegetableApiController` : liste filtrée par saison +
-  statut, CRUD, décrément du `GraineLot`). Écriture refusée si saison clôturée.
-- Front : vues liste/formulaire semis, filtres (statut, graineType), affichage du cycle
-  (semé → levé → repiqué → planté/échec), sélection du lot consommé.
-- Tests API : CRUD, décrément lot, blocage saison clôturée.
-- **Fichiers** : `src/Entity/Semis.php`, `src/Repository/SemisRepository.php`,
-  `src/Controller/Api/SemisApiController.php`, `assets/src/views/semis/*`,
+### Phase 3 — Semis (scopé saison, consomme la grainothèque) ✅ FAIT
+**Évolution du modèle vs plan initial** : suivi **individuel au plant** plutôt
+qu'un lot à statut unique. **1 graine semée = 1 ligne `Semis`** (ses propres
+dates semis/levée/plantation) + **rempotages 0..n** (entité `Rempotage`).
+- Entités `Semis` (saison, graineType, graineLot?, methode `direct|godet`,
+  dateSemis, dateLevee?, datePlantation?, dates théoriques, `echec`, statut
+  **dérivé** `seme|leve|plante|echec`, notes) + `Rempotage` (semis, date, notes?).
+  Migration `Version20260623124458` (tables `plant_semis`, `plant_rempotage`).
+- API `SemisApiController` (calque `VegetableApiController`) : liste filtrée
+  saison (courante via `CurrentSeason`) + `statut`/`graineType` (sans pagination),
+  CRUD, **`POST /api/semis/batch`** (saisie groupée : N semis par entrée, mix de
+  types), rempotages imbriqués `POST/DELETE /api/semis/{id}/rempotages[/{rid}]`.
+  **Décrément + restitution** du `GraineLot` (−1 à la création/batch, ajustement
+  au changement de lot, +1 à la suppression). **Écriture refusée 409 si saison
+  clôturée** (premier consommateur de `SeasonGuard`).
+- Front : `SemisList` (regroupement par type+date+méthode, dépliable, actions
+  rapides levé/rempoter/planté/échec/éditer/supprimer, filtres statut/type,
+  scope saison courante), `SemisForm` (cascade type→graine→lot), `SemisBatchForm`
+  (saisie multi-lignes). Menu « Semis » dans le potager.
+- Tests : `SemisApiTest` (CRUD, décrément, batch, restitution update/delete,
+  rempotages, statut dérivé, filtres, blocage saison clôturée, isolation).
+- **Fichiers** : `src/Entity/{Semis,Rempotage}.php`,
+  `src/Repository/{SemisRepository,RempotageRepository}.php`,
+  `src/Controller/Api/SemisApiController.php`,
+  `assets/src/views/semis/{SemisList,SemisForm,SemisBatchForm}.vue`,
+  `assets/src/router/index.js`, `assets/src/App.vue`,
   `tests/Controller/Api/SemisApiTest.php`.
 
 ### Phase 4 — Bacs + cycle de saison (report géométrie + pérennes)
