@@ -3,9 +3,11 @@ import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useGroupStore } from './stores/group';
+import { useSeasonStore } from './stores/season';
 
 const auth = useAuthStore();
 const groups = useGroupStore();
+const seasons = useSeasonStore();
 const router = useRouter();
 const route = useRoute();
 
@@ -17,14 +19,19 @@ const context = computed(() => (route.path.startsWith('/potager') ? 'potager' : 
 // Version injectée au build par Vite (tag Git en prod, 'dev' en local).
 const appVersion = __APP_VERSION__;
 
-async function loadGroupData() {
+async function loadNavbarData() {
     if (isAuth.value) {
-        await Promise.all([groups.fetchGroups(), groups.fetchCurrent()]);
+        await Promise.all([
+            groups.fetchGroups(),
+            groups.fetchCurrent(),
+            seasons.fetchSeasons(),
+            seasons.fetchCurrent(),
+        ]);
     }
 }
 
-onMounted(loadGroupData);
-watch(isAuth, loadGroupData);
+onMounted(loadNavbarData);
+watch(isAuth, loadNavbarData);
 
 async function onGroupChange(event) {
     const value = event.target.value;
@@ -33,6 +40,11 @@ async function onGroupChange(event) {
     if (router.currentRoute.value.name === 'vegetable-index') {
         router.go(0);
     }
+}
+
+async function onSeasonChange(event) {
+    const value = event.target.value;
+    await seasons.setCurrent(value === '' ? null : Number(value));
 }
 
 async function logout() {
@@ -109,6 +121,7 @@ async function logout() {
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Paramétrage</a>
                             <ul class="dropdown-menu">
+                                <li><router-link class="dropdown-item" :to="{ name: 'saison-index' }">Saisons</router-link></li>
                                 <li><router-link class="dropdown-item" :to="{ name: 'graine-type-index' }">Types de graines</router-link></li>
                             </ul>
                         </li>
@@ -120,6 +133,15 @@ async function logout() {
                         <select class="form-select form-select-sm" :value="groups.currentId ?? ''" @change="onGroupChange" style="min-width: 160px">
                             <option value="">Tous les groupes</option>
                             <option v-for="g in groups.groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+                        </select>
+                    </li>
+                    <li v-if="context === 'potager'" class="nav-item me-3 d-flex align-items-center text-secondary">
+                        <i class="bi bi-calendar-range me-1"></i>
+                        <select class="form-select form-select-sm" :value="seasons.currentId ?? ''" @change="onSeasonChange" style="min-width: 160px">
+                            <option v-if="seasons.seasons.length === 0" value="">Aucune saison</option>
+                            <option v-for="s in seasons.seasons" :key="s.id" :value="s.id">
+                                {{ s.name }}{{ s.statut === 'cloturee' ? ' (clôturée)' : '' }}
+                            </option>
                         </select>
                     </li>
                     <li class="nav-item dropdown">

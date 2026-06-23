@@ -141,21 +141,28 @@ saisons clôturées).
   `assets/src/views/graine/*`, `assets/src/router/index.js`, `assets/src/App.vue`,
   `tests/Controller/Api/{GraineTypeApiTest,GraineApiTest,GraineLotApiTest}.php`.
 
-### Phase 2 — Saison (colonne vertébrale)
-- Entité `Saison` (+ migration).
-- Service `App\Service\CurrentSeason` (session, calqué `CurrentGroup`) +
-  endpoints `GET/PUT /api/current-season` et CRUD `Saison` (lister, créer, clôturer).
-- Garde « saison clôturée = lecture seule » (helper réutilisable, branché plus tard sur
-  Semis/Cultures/Bacs).
-- Front : store Pinia `season`, **sélecteur de saison dans la navbar** (à côté du
-  sélecteur de groupe), vue liste des saisons, bouton « Nouvelle saison » (squelette : la
-  logique de report arrive en Phase 4).
-- Tests API : CRUD saison, une seule active, sélection courante.
+### Phase 2 — Saison (colonne vertébrale) ✅ FAIT
+- Entité `Saison` (`name`, `annee`, `dateDebut`, `dateFin?`, `statut` active|cloturee,
+  `utilisateur`) + migration `Version20260623094850` (table `plant_saison`).
+- Service `App\Service\CurrentSeason` (session `current_season`, calqué `CurrentGroup`,
+  fallback sur la saison active) + endpoints `GET/PUT /api/current-season` (dans
+  `AuthController`) et CRUD `Saison` (`SaisonApiController`, étend
+  `AbstractOwnedCrudApiController`). Action `PUT /api/saisons/{id}/cloturer`.
+  **POST auto-clôture la saison active précédente** (une seule active/utilisateur).
+- Garde « saison clôturée = lecture seule » : `App\Service\SeasonGuard`
+  (`isWritable`/`assertWritable` → `App\Exception\ClosedSeasonException`) **livré seul,
+  non branché** (consommateurs Semis/Cultures/Bacs en Phases 3-5).
+- Front : store Pinia `season`, **sélecteur de saison dans la navbar** (visible en
+  contexte Potager), entrée de menu « Saisons », vues liste/formulaire des saisons,
+  bouton « Nouvelle saison » (squelette : la logique de report arrive en Phase 4).
+- Tests : `SaisonApiTest` (CRUD, une seule active, clôture, sélection courante +
+  fallback, isolation propriétaire, 422) + `SeasonGuardTest` (unitaire).
 - **Fichiers** : `src/Entity/Saison.php`, `src/Repository/SaisonRepository.php`,
-  `src/Service/CurrentSeason.php`, `src/Controller/Api/SaisonApiController.php`,
-  endpoints saison dans `AuthController` ou contrôleur dédié, `assets/src/stores/season.js`,
-  `assets/src/App.vue`, `assets/src/views/saison/*`,
-  `tests/Controller/Api/SaisonApiTest.php`.
+  `src/Service/CurrentSeason.php`, `src/Service/SeasonGuard.php`,
+  `src/Exception/ClosedSeasonException.php`, `src/Controller/Api/SaisonApiController.php`,
+  endpoints saison dans `AuthController`, `assets/src/stores/season.js`,
+  `assets/src/App.vue`, `assets/src/router/index.js`, `assets/src/views/saison/*`,
+  `tests/Controller/Api/SaisonApiTest.php`, `tests/Service/SeasonGuardTest.php`.
 
 ### Phase 3 — Semis (scopé saison, consomme la grainothèque)
 - Entité `Semis` (+ migration).
