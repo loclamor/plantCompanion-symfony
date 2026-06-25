@@ -125,6 +125,7 @@ async function logout() {
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Paramétrage</a>
                             <ul class="dropdown-menu">
                                 <li><router-link class="dropdown-item" :to="{ name: 'saison-index' }">Saisons</router-link></li>
+                                <li><router-link class="dropdown-item" :to="{ name: 'bac-index' }">Bacs</router-link></li>
                                 <li><router-link class="dropdown-item" :to="{ name: 'graine-type-index' }">Types de graines</router-link></li>
                             </ul>
                         </li>

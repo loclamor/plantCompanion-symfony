@@ -42,7 +42,9 @@ async function submit() {
         if (isEdit.value) {
             await http.put(`/saisons/${id.value}`, payload);
         } else {
-            await http.post('/saisons', payload);
+            // Démarrer une nouvelle saison = cycle : clôture l'active + recopie la
+            // géométrie des bacs (cf. SaisonCycleService).
+            await http.post('/saisons/new-cycle', payload);
         }
         // La création (auto-clôture de l'ancienne) modifie la saison courante.
         await seasons.fetchSeasons();

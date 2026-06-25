@@ -192,28 +192,41 @@ dates semis/levée/plantation) + **rempotages 0..n** (entité `Rempotage`).
   `assets/src/router/index.js`, `assets/src/App.vue`,
   `tests/Controller/Api/SemisApiTest.php`.
 
-### Phase 4 — Bacs + cycle de saison (report géométrie + pérennes)
-- Entités `Bac` + `BacSaison` (+ migration).
-- API : `BacApiController` (identité logique, archivage), `BacSaisonApiController`
-  (taille physique figée à la saison ; lignes/colonnes éditables si saison active).
-- Service `SaisonCycleService.startNewSeason(user, name)` :
+### Phase 4 — Bacs + cycle de saison ✅ FAIT
+- Entités `Bac` (identité logique : `name`, `largeurDefaut`/`longueurDefaut`,
+  `lignesDefaut`/`colonnesDefaut`, `archived`) + `BacSaison` (snapshot : `bac`, `saison`,
+  taille physique `largeur`/`longueur`/`posX`/`posY` **figée**, découpage `lignes`/`colonnes`
+  **éditable**). Migration `Version20260623174518` (tables `plant_bac`, `plant_bac_saison`).
+- API : `BacApiController` (`/api/bacs`, CRUD via `AbstractOwnedCrudApiController` +
+  `PUT /api/bacs/{id}/archiver`), `BacSaisonApiController` (`/api/bac-saisons`, calque
+  `SemisApiController` : liste scopée saison courante, taille physique **figée** → 409 sur
+  tentative de changement, découpage modifiable si saison active, **écriture refusée 409 si
+  saison clôturée** via `SeasonGuard`).
+- Service `App\Service\SaisonCycleService.startNewSeason(user, Saison)` :
   1. clôture la saison active courante ;
-  2. crée une nouvelle saison active ;
+  2. persiste la nouvelle saison active ;
   3. recopie la géométrie de chaque `Bac` non archivé dans un nouveau `BacSaison`
-     (taille physique + position depuis le dernier `BacSaison` ou les défauts du `Bac`,
-     découpage lignes/colonnes idem) ;
-  4. recopie les `Culture` **pérennes** `en_place` dans les `BacSaison` correspondants,
-     même placement, en liant `parentCulture` ;
+     (depuis le dernier `BacSaison` du bac via `BacSaisonRepository::findLastForBac`, sinon
+     les défauts du `Bac`) ;
+  4. **report des `Culture` pérennes : différé en Phase 5** (l'entité `Culture` n'existe pas
+     encore — point d'extension laissé dans le service) ;
   5. grainothèque inchangée ; semis/annuelles non reportés.
-- Front : liste/formulaire des bacs (taille physique + découpage par défaut), édition du
-  découpage de la saison courante, branchement réel du bouton « Nouvelle saison » (Phase 2).
-- Tests API : snapshot géométrie, immutabilité des saisons passées, taille physique figée
-  vs découpage éditable, report pérennes, reset annuelles.
-- **Fichiers** : `src/Entity/Bac.php`, `src/Entity/BacSaison.php`,
-  `src/Repository/*`, `src/Controller/Api/BacApiController.php`,
-  `src/Controller/Api/BacSaisonApiController.php`, `src/Service/SaisonCycleService.php`,
-  `assets/src/views/bac/*`, `tests/Controller/Api/BacApiTest.php`,
-  `tests/Controller/Api/SaisonCycleTest.php`.
+  Exposé via `POST /api/saisons/new-cycle` (dans `SaisonApiController`), appelé par la
+  création de saison du front (`SaisonForm`).
+- Front : `BacList` (définition des bacs + édition inline du découpage de la saison courante,
+  lecture seule si clôturée) / `BacForm`, menu « Potager › Bacs », routes `/potager/bacs`.
+  Création d'une saison branchée sur le cycle (report géométrie).
+- Tests API : `BacApiTest` (CRUD, archivage, 422 dimensions, isolation), `BacSaisonApiTest`
+  (scope saison, taille figée, découpage éditable, blocage saison clôturée, isolation),
+  `SaisonCycleTest` (clôture+nouvelle active, recopie géométrie, immutabilité du passé, bacs
+  archivés non reportés, défauts au 1er report, validation payload).
+- **Fichiers** : `src/Entity/{Bac,BacSaison}.php`,
+  `src/Repository/{BacRepository,BacSaisonRepository}.php`,
+  `src/Controller/Api/{BacApiController,BacSaisonApiController}.php`,
+  `src/Service/SaisonCycleService.php`, `migrations/Version20260623174518.php`,
+  endpoint `new-cycle` dans `SaisonApiController`, `assets/src/views/bac/{BacList,BacForm}.vue`,
+  `assets/src/{router/index.js,App.vue,views/saison/SaisonForm.vue}`,
+  `tests/Controller/Api/{BacApiTest,BacSaisonApiTest,SaisonCycleTest}.php`.
 
 ### Phase 5 — Cultures / Plantations
 - Entité `Culture` (+ migration).

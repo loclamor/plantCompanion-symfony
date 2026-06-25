@@ -7,17 +7,22 @@ use App\Entity\UserOwnedInterface;
 use App\Entity\Utilisateur;
 use App\Repository\SaisonRepository;
 use App\Security\Voter\OwnerVoter;
+use App\Service\SaisonCycleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/saisons')]
 final class SaisonApiController extends AbstractOwnedCrudApiController
 {
-    public function __construct(EntityManagerInterface $em, private readonly SaisonRepository $repo)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        private readonly SaisonRepository $repo,
+        private readonly SaisonCycleService $cycle,
+    ) {
         parent::__construct($em);
     }
 
@@ -119,6 +124,25 @@ final class SaisonApiController extends AbstractOwnedCrudApiController
         }
 
         return $this->doCreate($request, $user);
+    }
+
+    #[Route('/new-cycle', name: 'api_saison_new_cycle', methods: ['POST'])]
+    public function newCycle(Request $request, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        // Démarrer une nouvelle saison avec report : clôture l'active, crée la
+        // nouvelle saison active et recopie la géométrie des bacs (cf. SaisonCycleService).
+        $data = json_decode($request->getContent(), true) ?? [];
+        $saison = $this->createEntity($user);
+        \assert($saison instanceof Saison);
+
+        $errors = $this->applyPayload($saison, $data, $user);
+        if ([] !== $errors) {
+            return new JsonResponse(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->cycle->startNewSeason($user, $saison);
+
+        return new JsonResponse(\App\Service\Utf8::clean($this->serialize($saison)), Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'api_saison_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
