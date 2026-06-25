@@ -31,6 +31,6 @@ export default defineConfig({
         strictPort: true,
         // Permet au navigateur (servi par nginx) de charger les assets du dev server.
         cors: true,
-        origin: 'http://local.plantcompanion.fr:5173',
+        origin: 'http://localhost:5173',
     },
 });

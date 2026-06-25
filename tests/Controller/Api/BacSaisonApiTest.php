@@ -141,6 +141,35 @@ class BacSaisonApiTest extends DatabaseTestCase
         $this->assertResponseStatusCodeSame(409);
     }
 
+    public function testDecoupageShrinkRejectedUnderEnPlaceCulture(): void
+    {
+        $alice = $this->createUser('alice');
+        $saison = $this->makeSaison($alice);
+        $bac = $this->makeBac($alice);
+        $this->client->loginUser($alice);
+
+        $created = $this->json('POST', '/api/bac-saisons', ['bac' => $bac->getId(), 'saison' => $saison->getId()]);
+
+        // Pose une culture « en_place » en colonne 5 (grille 6 colonnes).
+        $bs = static::getContainer()->get(\App\Repository\BacSaisonRepository::class)->find($created['id']);
+        $culture = (new \App\Entity\Culture())
+            ->setUtilisateur($alice)->setSaison($saison)->setBacSaison($bs)
+            ->setName('Tomate')->setPosX(5)->setPosY(0)->setLargeurCases(1)->setHauteurCases(1)
+            ->setDatePlantation(new \DateTimeImmutable('2026-04-01'))
+            ->setStatut(\App\Entity\Culture::STATUT_EN_PLACE);
+        $this->em->persist($culture);
+        $this->em->flush();
+
+        // Resserrer à 4 colonnes laisserait la culture (col 5) hors bornes → 409.
+        $res = $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['colonnes' => 4]);
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertArrayHasKey('conflicts', $res);
+
+        // Resserrement compatible (la culture tient encore) → OK.
+        $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['colonnes' => 6, 'lignes' => 2]);
+        $this->assertResponseIsSuccessful();
+    }
+
     public function testCannotViewOthers(): void
     {
         $alice = $this->createUser('alice');

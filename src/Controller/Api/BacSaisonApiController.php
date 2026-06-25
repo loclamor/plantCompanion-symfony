@@ -9,6 +9,7 @@ use App\Entity\Utilisateur;
 use App\Exception\ClosedSeasonException;
 use App\Repository\BacRepository;
 use App\Repository\BacSaisonRepository;
+use App\Repository\CultureRepository;
 use App\Repository\SaisonRepository;
 use App\Security\Voter\OwnerVoter;
 use App\Service\CurrentSeason;
@@ -35,6 +36,7 @@ final class BacSaisonApiController extends AbstractController
         private readonly BacSaisonRepository $bacSaisons,
         private readonly BacRepository $bacs,
         private readonly SaisonRepository $saisons,
+        private readonly CultureRepository $cultures,
         private readonly CurrentSeason $currentSeason,
         private readonly SeasonGuard $seasonGuard,
     ) {
@@ -129,9 +131,37 @@ final class BacSaisonApiController extends AbstractController
             return new JsonResponse(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        // Resserrer le découpage ne doit pas laisser de culture « en_place » hors bornes.
+        $conflicts = $this->culturesOutOfBounds($bacSaison);
+        if ([] !== $conflicts) {
+            return new JsonResponse([
+                'message' => 'Le découpage est trop petit : des cultures en place sortiraient de la grille.',
+                'conflicts' => $conflicts,
+            ], Response::HTTP_CONFLICT);
+        }
+
         $this->em->flush();
 
         return new JsonResponse(\App\Service\Utf8::clean($this->serialize($bacSaison)));
+    }
+
+    /**
+     * Cultures « en_place » du bac qui ne tiennent plus dans lignes×colonnes.
+     *
+     * @return array<int, array{id: int|null, name: string|null}>
+     */
+    private function culturesOutOfBounds(BacSaison $bacSaison): array
+    {
+        $conflicts = [];
+        foreach ($this->cultures->findEnPlaceByBacSaison($bacSaison) as $culture) {
+            $outX = $culture->getPosX() + $culture->getLargeurCases() > $bacSaison->getColonnes();
+            $outY = $culture->getPosY() + $culture->getHauteurCases() > $bacSaison->getLignes();
+            if ($outX || $outY) {
+                $conflicts[] = ['id' => $culture->getId(), 'name' => $culture->getName()];
+            }
+        }
+
+        return $conflicts;
     }
 
     #[Route('/{id}', name: 'api_bac_saison_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]

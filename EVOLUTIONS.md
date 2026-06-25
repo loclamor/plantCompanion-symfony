@@ -228,21 +228,56 @@ dates semis/levée/plantation) + **rempotages 0..n** (entité `Rempotage`).
   `assets/src/{router/index.js,App.vue,views/saison/SaisonForm.vue}`,
   `tests/Controller/Api/{BacApiTest,BacSaisonApiTest,SaisonCycleTest}.php`.
 
-### Phase 5 — Cultures / Plantations
-- Entité `Culture` (+ migration).
-- API `CultureApiController` (calquer `VegetableApiController` : liste filtrée par
-  saison/bac, placement, statut, lien semis→culture lors de la mise en bac — bascule le
-  `Semis.statut` à `plante`). Validation placement (bornes + chevauchement). Écriture
-  refusée si saison clôturée.
-- Front : pose d'un plant dans un bac (depuis un semis « repiqué » ou ajout direct),
-  édition statut/dates/pérenne, liste par bac.
-- Tests API : CRUD, validation placement/chevauchement, lien semis, blocage saison
-  clôturée.
-- **Fichiers** : `src/Entity/Culture.php`, `src/Repository/CultureRepository.php`,
-  `src/Controller/Api/CultureApiController.php`, `assets/src/views/culture/*`,
-  `tests/Controller/Api/CultureApiTest.php`.
+### Phase 5 — Cultures / Plantations ✅ FAIT
+- Entité `Culture` (saison, bacSaison, graineType?, semis?, name, posX/posY,
+  largeurCases/hauteurCases, datePlantation, dateRecolteTheorique?, dateFin?, statut
+  `en_place|recolte|mort`, perenne, parentCulture self-ref) + migration
+  `Version20260625080824` (table `plant_culture`).
+- API `CultureApiController` (calque `SemisApiController` : scope saison courante via
+  `CurrentSeason`, `SeasonGuard`) : liste filtrée `?saison/?bacSaison/?statut`, CRUD.
+  **Validation de placement** : bornes de la grille + non-chevauchement avec les cultures
+  `en_place` du même bac (422 + liste des conflits ; les `recolte`/`mort` ne bloquent pas).
+  **Lien semis** : à la mise en bac, le `Semis` bascule `plante` (datePlantation posée si
+  absente, statut recalculé). Écriture refusée 409 si saison clôturée.
+- Garde « réduire le découpage sous une culture » branchée dans
+  `BacSaisonApiController.update` (409 + conflits si resserrement laisse une culture
+  `en_place` hors bornes).
+- **Report des pérennes** dans `SaisonCycleService.startNewSeason` (étape 4) : les cultures
+  `en_place` + `perenne` sont recopiées dans le `BacSaison` du même bac de la nouvelle
+  saison (lignage `parentCulture`, **`datePlantation` d'origine conservée**, semis non
+  reporté). Bacs archivés (pas de nouveau snapshot) → cultures non reportées.
+- Front : `CultureList` (liste de la saison courante, filtres bac/statut, actions rapides
+  récolté/mort/éditer/supprimer, lecture seule si clôturée), `CultureForm` (**sélecteur de
+  case cliquable** = grille `lignes×colonnes` du bac, cases occupées grisées ; emprise
+  largeur/hauteur ; origine semis « levé » optionnelle ou ajout direct ; dates, statut,
+  pérenne). Menu « Potager › Cultures », routes `/potager/cultures`.
+- Tests API : `CultureApiTest` (CRUD, scope/filtres, bornes, chevauchement, autorisé sur
+  `recolte`, adjacence, update sans auto-conflit, lien semis→planté, 409 clôturée,
+  isolation) ; `SaisonCycleTest` complété (report pérennes uniquement, bac archivé exclu) ;
+  `BacSaisonApiTest` complété (refus resserrement). Suite complète verte (123 tests).
+- **Récoltes multiples** : entité `Recolte` (0..n par culture, calque `Rempotage` : date,
+  quantité?, unité `pieces|g|kg`, notes) + migration `Version20260625093607`
+  (`plant_recolte`). Endpoints imbriqués `POST /api/cultures/{id}/recoltes` et
+  `DELETE /api/cultures/{id}/recoltes/{rid}`, sérialisées dans la culture. La culture
+  **reste `en_place`** quand on ajoute des récoltes ; `recolte` est un statut final posé
+  manuellement. Géré inline dans `CultureForm` (mode édition).
+- **Décisions** : UI placement = sélecteur de case cliquable (drag-drop reporté Phase 6) ;
+  pérenne reportée conserve sa `datePlantation` d'origine ; récoltes multiples par culture
+  (rendement cumulé) sans changer le statut.
+- **Fichiers** : `src/Entity/{Culture,Recolte}.php`,
+  `src/Repository/{CultureRepository,RecolteRepository}.php`,
+  `src/Controller/Api/CultureApiController.php`,
+  `migrations/{Version20260625080824,Version20260625093607}.php`,
+  `src/Service/SaisonCycleService.php`, `src/Controller/Api/BacSaisonApiController.php`,
+  `assets/src/views/culture/{CultureList,CultureForm}.vue`,
+  `assets/src/{router/index.js,App.vue}`,
+  `tests/Controller/Api/{CultureApiTest,SaisonCycleTest,BacSaisonApiTest}.php`.
 
 ### Phase 6 — Vue plan visuelle
+- **Pré-requis** : relâcher le gel de `posX/posY` du `BacSaison` (actuellement figé,
+  409 dans `BacSaisonApiController::update` lignes ~119-125) pour permettre le
+  repositionnement des bacs par drag-drop tant que la saison est `active` ; garder
+  `largeur/longueur` figés. À acter au début de la phase.
 - Vue Vue dédiée : plan du potager (bacs positionnés via `posX/posY`, à l'échelle de leur
   taille physique), zoom sur un bac = grille `lignes × colonnes`, cases occupées par les
   cultures (`posX/posY` + emprise).

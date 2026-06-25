@@ -3,21 +3,23 @@
 namespace App\Service;
 
 use App\Entity\BacSaison;
+use App\Entity\Culture;
 use App\Entity\Saison;
 use App\Entity\Utilisateur;
 use App\Repository\BacRepository;
 use App\Repository\BacSaisonRepository;
+use App\Repository\CultureRepository;
 use App\Repository\SaisonRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Cycle de vie des saisons du potager : démarrage d'une nouvelle saison avec
- * report. Clôture la saison active courante, persiste la nouvelle saison, et
- * recopie la géométrie des bacs non archivés dans de nouveaux BacSaison.
+ * report. Clôture la saison active courante, persiste la nouvelle saison,
+ * recopie la géométrie des bacs non archivés dans de nouveaux BacSaison, et
+ * reporte les cultures pérennes encore en place.
  *
  * La grainothèque est hors saison (inchangée) ; les semis et cultures annuelles
- * ne sont pas reportés. Le report des cultures **pérennes** arrivera en Phase 5
- * (l'entité Culture n'existe pas encore).
+ * ne sont pas reportés.
  */
 final class SaisonCycleService
 {
@@ -26,6 +28,7 @@ final class SaisonCycleService
         private readonly SaisonRepository $saisons,
         private readonly BacRepository $bacs,
         private readonly BacSaisonRepository $bacSaisons,
+        private readonly CultureRepository $cultures,
     ) {
     }
 
@@ -48,11 +51,26 @@ final class SaisonCycleService
         $this->em->persist($newSaison);
 
         // 3. Recopier la géométrie de chaque bac non archivé dans un BacSaison.
+        //    On indexe les nouveaux snapshots par id de Bac pour le report des pérennes.
+        $newSnapshotsByBac = [];
         foreach ($this->bacs->findActiveByUser($user) as $bac) {
-            $this->createSnapshot($user, $bac, $newSaison);
+            $newSnapshotsByBac[$bac->getId()] = $this->createSnapshot($user, $bac, $newSaison);
         }
 
-        // 4. Phase 5 : recopier les Culture pérennes « en_place » + lier parentCulture.
+        // 4. Reporter les cultures pérennes « en_place » de la saison clôturée vers
+        //    le BacSaison correspondant (même Bac) de la nouvelle saison. Les bacs
+        //    archivés n'ont pas de nouveau snapshot → leurs cultures ne sont pas reportées.
+        if (null !== $active && $active !== $newSaison) {
+            foreach ($this->cultures->findEnPlacePerennes($active) as $parent) {
+                $bac = $parent->getBacSaison()?->getBac();
+                $target = null !== $bac ? ($newSnapshotsByBac[$bac->getId()] ?? null) : null;
+                if (null === $target) {
+                    continue;
+                }
+                $this->reportPerenne($user, $parent, $newSaison, $target);
+            }
+        }
+
         // 5. Grainothèque inchangée ; semis/cultures annuelles non reportés (rien à faire).
 
         $this->em->flush();
@@ -96,5 +114,31 @@ final class SaisonCycleService
         $this->em->persist($bs);
 
         return $bs;
+    }
+
+    /**
+     * Crée (sans flush) la culture reportée d'une pérenne dans la nouvelle saison :
+     * même position/emprise/type, statut « en_place », perenne conservé,
+     * datePlantation d'origine conservée, lignage via parentCulture. Le semis
+     * d'origine (ancienne saison) n'est pas reporté.
+     */
+    private function reportPerenne(Utilisateur $user, Culture $parent, Saison $newSaison, BacSaison $target): void
+    {
+        $report = (new Culture())
+            ->setUtilisateur($user)
+            ->setSaison($newSaison)
+            ->setBacSaison($target)
+            ->setGraineType($parent->getGraineType())
+            ->setName((string) $parent->getName())
+            ->setPosX($parent->getPosX())
+            ->setPosY($parent->getPosY())
+            ->setLargeurCases($parent->getLargeurCases())
+            ->setHauteurCases($parent->getHauteurCases())
+            ->setDatePlantation($parent->getDatePlantation())
+            ->setStatut(Culture::STATUT_EN_PLACE)
+            ->setPerenne(true)
+            ->setParentCulture($parent);
+
+        $this->em->persist($report);
     }
 }

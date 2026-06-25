@@ -4,6 +4,7 @@ namespace App\Tests\Controller\Api;
 
 use App\Entity\Bac;
 use App\Entity\BacSaison;
+use App\Entity\Culture;
 use App\Entity\Saison;
 use App\Entity\Utilisateur;
 use App\Repository\BacSaisonRepository;
@@ -143,5 +144,74 @@ class SaisonCycleTest extends DatabaseTestCase
         $data = $this->json('POST', '/api/saisons/new-cycle', ['name' => '', 'annee' => null, 'dateDebut' => null]);
         $this->assertResponseStatusCodeSame(422);
         $this->assertArrayHasKey('name', $data['errors']);
+    }
+
+    private function makeCulture(Utilisateur $user, Saison $saison, BacSaison $bs, bool $perenne, string $statut, string $name = 'Plant'): Culture
+    {
+        $c = (new Culture())
+            ->setUtilisateur($user)->setSaison($saison)->setBacSaison($bs)
+            ->setName($name)->setPosX(2)->setPosY(1)->setLargeurCases(1)->setHauteurCases(1)
+            ->setDatePlantation(new \DateTimeImmutable('2025-04-10'))
+            ->setStatut($statut)->setPerenne($perenne);
+        $this->em->persist($c);
+        $this->em->flush();
+
+        return $c;
+    }
+
+    public function testNewCycleReportsPerennesOnly(): void
+    {
+        $alice = $this->createUser('alice');
+        $old = $this->makeSaison($alice, '2025', 2025, Saison::STATUT_ACTIVE);
+        $bac = $this->makeBac($alice);
+        $bs2025 = (new BacSaison())
+            ->setUtilisateur($alice)->setBac($bac)->setSaison($old)
+            ->setLargeur(120)->setLongueur(80)->setLignes(4)->setColonnes(6);
+        $this->em->persist($bs2025);
+        $this->em->flush();
+
+        $perenne = $this->makeCulture($alice, $old, $bs2025, perenne: true, statut: Culture::STATUT_EN_PLACE, name: 'Fraisier');
+        $this->makeCulture($alice, $old, $bs2025, perenne: false, statut: Culture::STATUT_EN_PLACE, name: 'Tomate');
+        $this->makeCulture($alice, $old, $bs2025, perenne: true, statut: Culture::STATUT_RECOLTE, name: 'Vieux fraisier');
+        $perenneId = $perenne->getId();
+
+        $this->client->loginUser($alice);
+        $new = $this->json('POST', '/api/saisons/new-cycle', ['name' => '2026', 'annee' => 2026, 'dateDebut' => '2026-03-15']);
+        $this->assertResponseStatusCodeSame(201);
+
+        // Seule la pérenne « en_place » est reportée.
+        $list = $this->json('GET', '/api/cultures?saison='.$new['id']);
+        $this->assertCount(1, $list['items']);
+        $reported = $list['items'][0];
+        $this->assertSame('Fraisier', $reported['name']);
+        $this->assertTrue($reported['perenne']);
+        $this->assertSame('en_place', $reported['statut']);
+        $this->assertSame(2, $reported['posX']);
+        $this->assertSame(1, $reported['posY']);
+        // datePlantation d'origine conservée + lignage parentCulture.
+        $this->assertSame('2025-04-10', $reported['datePlantation']);
+        $this->assertSame($perenneId, $reported['parentCulture']['id']);
+        // Rattachée au nouveau snapshot du même bac.
+        $this->assertSame($bac->getId(), $reported['bacSaison']['bac']['id']);
+    }
+
+    public function testArchivedBacPerennesNotReported(): void
+    {
+        $alice = $this->createUser('alice');
+        $old = $this->makeSaison($alice, '2025', 2025, Saison::STATUT_ACTIVE);
+        $bac = $this->makeBac($alice, 'Bac archivé', archived: true);
+        $bs2025 = (new BacSaison())
+            ->setUtilisateur($alice)->setBac($bac)->setSaison($old)
+            ->setLargeur(120)->setLongueur(80)->setLignes(4)->setColonnes(6);
+        $this->em->persist($bs2025);
+        $this->em->flush();
+        $this->makeCulture($alice, $old, $bs2025, perenne: true, statut: Culture::STATUT_EN_PLACE, name: 'Asperge');
+
+        $this->client->loginUser($alice);
+        $new = $this->json('POST', '/api/saisons/new-cycle', ['name' => '2026', 'annee' => 2026, 'dateDebut' => '2026-03-15']);
+
+        // Bac archivé → pas de snapshot recréé → pérenne non reportée.
+        $list = $this->json('GET', '/api/cultures?saison='.$new['id']);
+        $this->assertCount(0, $list['items']);
     }
 }
