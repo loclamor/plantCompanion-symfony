@@ -124,11 +124,15 @@ async function logout() {
                         <li class="nav-item">
                             <router-link class="nav-link" :to="{ name: 'culture-index' }"><i class="bi bi-tree"></i> Cultures</router-link>
                         </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" :to="{ name: 'plan-index' }"><i class="bi bi-map"></i> Plan</router-link>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Paramétrage</a>
                             <ul class="dropdown-menu">
                                 <li><router-link class="dropdown-item" :to="{ name: 'saison-index' }">Saisons</router-link></li>
                                 <li><router-link class="dropdown-item" :to="{ name: 'bac-index' }">Bacs</router-link></li>
+                                <li><router-link class="dropdown-item" :to="{ name: 'plan-edit' }">Plan (édition)</router-link></li>
                                 <li><router-link class="dropdown-item" :to="{ name: 'graine-type-index' }">Types de graines</router-link></li>
                             </ul>
                         </li>

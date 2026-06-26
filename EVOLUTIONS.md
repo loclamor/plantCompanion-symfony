@@ -273,23 +273,30 @@ dates semis/levée/plantation) + **rempotages 0..n** (entité `Rempotage`).
   `assets/src/{router/index.js,App.vue}`,
   `tests/Controller/Api/{CultureApiTest,SaisonCycleTest,BacSaisonApiTest}.php`.
 
-### Phase 6 — Vue plan visuelle
-- **Pré-requis** : relâcher le gel de `posX/posY` du `BacSaison` (actuellement figé,
-  409 dans `BacSaisonApiController::update` lignes ~119-125) pour permettre le
-  repositionnement des bacs par drag-drop tant que la saison est `active` ; garder
-  `largeur/longueur` figés. À acter au début de la phase.
-- Vue Vue dédiée : plan du potager (bacs positionnés via `posX/posY`, à l'échelle de leur
-  taille physique), zoom sur un bac = grille `lignes × colonnes`, cases occupées par les
-  cultures (`posX/posY` + emprise).
-- Interaction : placement/déplacement par drag-drop case par case (HTML5 natif d'abord,
-  sinon dépendance légère type `vue-draggable-plus` si nécessaire — décision au début de
-  la phase). **Lecture seule** si la saison sélectionnée est clôturée.
-- Rendu : SVG ou CSS Grid (pas de nouvelle dépendance lourde ; pas de canvas-lib existante
-  dans le projet — cf. `package.json`).
-- Réutiliser le thème vert (`assets/src/css/theme.css`).
-- **Fichiers** : `assets/src/views/potager/PlanView.vue`,
-  `assets/src/components/potager/BacGrid.vue` (+ éventuel `CultureCell.vue`),
-  `assets/src/router/index.js`.
+### Phase 6 — Vue plan visuelle ✅ FAIT
+- **Gel `posX/posY` relâché** : `BacSaisonApiController::update` ne fige plus que
+  `largeur/longueur` (409) ; `posX/posY` deviennent éditables tant que la saison est
+  `active` (la garde saison clôturée → 409 reste). Permet le repositionnement des bacs.
+- Backend : nouvel endpoint **`PUT /api/cultures/{id}/placement`** (`{ bacSaison?, posX, posY }`)
+  pour le drag-drop d'un plant (déplacement intra- ou inter-bac), réutilise
+  `validatePlacement` (bornes + chevauchement) et `SeasonGuard`.
+- Front — **deux vues** (zoom +/− 20-200 % sur les deux, rendu CSS, **aucune dépendance**) :
+  - **Lecture** `PlanReadView` (`/potager/plan`, menu « Potager › Plan ») : bacs positionnés
+    affichant **leur contenu** (mini-grille des plants à l'échelle). Clic sur un bac →
+    **popup de plantation** (champs réduits : nom, sélecteur de case, dates, pérenne) →
+    `POST /cultures`. Lecture seule si saison clôturée.
+  - **Édition** `PlanView` (`/potager/plan-edition`, menu « Paramétrage › Plan (édition) ») :
+    **drag d'un bac** (pointer events + **aimantation 10 cm**) → `PUT /bac-saisons/{id}`,
+    rollback si erreur ; clic = sélection → `BacGrid` (grille CSS, **drag-drop HTML5** d'un
+    plant → `PUT .../placement`, 422 → message). Lecture seule si clôturée.
+- Tests : `BacSaisonApiTest` (posX/posY éditables saison active, largeur figée, 409 si
+  clôturée) ; `CultureApiTest` (placement : déplacement, bornes 422, chevauchement 422,
+  inter-bac, 409 clôturée). Suite complète verte (132 tests).
+- **Fichiers** : `src/Controller/Api/{BacSaisonApiController,CultureApiController}.php`,
+  `assets/src/views/potager/{PlanReadView,PlanView}.vue`,
+  `assets/src/components/potager/BacGrid.vue`,
+  `assets/src/{router/index.js,App.vue}`,
+  `tests/Controller/Api/{BacSaisonApiTest,CultureApiTest}.php`.
 
 ---
 

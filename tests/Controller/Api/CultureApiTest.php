@@ -216,6 +216,68 @@ class CultureApiTest extends DatabaseTestCase
         $this->assertResponseStatusCodeSame(409);
     }
 
+    public function testPlacementEndpointMovesCulture(): void
+    {
+        $alice = $this->createUser('alice');
+        $saison = $this->makeSaison($alice);
+        $bs = $this->makeBacSaison($alice, $saison);
+        $this->client->loginUser($alice);
+
+        $c = $this->json('POST', '/api/cultures', $this->basePayload($bs, ['posX' => 0, 'posY' => 0]));
+        $moved = $this->json('PUT', '/api/cultures/'.$c['id'].'/placement', ['posX' => 3, 'posY' => 2]);
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(3, $moved['posX']);
+        $this->assertSame(2, $moved['posY']);
+    }
+
+    public function testPlacementRejectsOutOfBoundsAndOverlap(): void
+    {
+        $alice = $this->createUser('alice');
+        $saison = $this->makeSaison($alice);
+        $bs = $this->makeBacSaison($alice, $saison, lignes: 4, colonnes: 6);
+        $this->client->loginUser($alice);
+
+        $a = $this->json('POST', '/api/cultures', $this->basePayload($bs, ['posX' => 0, 'posY' => 0, 'name' => 'A']));
+        $b = $this->json('POST', '/api/cultures', $this->basePayload($bs, ['posX' => 2, 'posY' => 0, 'name' => 'B']));
+
+        // Hors grille (colonne 6 inexistante).
+        $this->json('PUT', '/api/cultures/'.$a['id'].'/placement', ['posX' => 6, 'posY' => 0]);
+        $this->assertResponseStatusCodeSame(422);
+
+        // Sur la case occupée par B → chevauchement.
+        $this->json('PUT', '/api/cultures/'.$a['id'].'/placement', ['posX' => 2, 'posY' => 0]);
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testPlacementMovesToAnotherBac(): void
+    {
+        $alice = $this->createUser('alice');
+        $saison = $this->makeSaison($alice);
+        $bs1 = $this->makeBacSaison($alice, $saison);
+        $bs2 = $this->makeBacSaison($alice, $saison);
+        $this->client->loginUser($alice);
+
+        $c = $this->json('POST', '/api/cultures', $this->basePayload($bs1, ['posX' => 1, 'posY' => 1]));
+        $moved = $this->json('PUT', '/api/cultures/'.$c['id'].'/placement', ['bacSaison' => $bs2->getId(), 'posX' => 0, 'posY' => 0]);
+        $this->assertResponseIsSuccessful();
+        $this->assertSame($bs2->getId(), $moved['bacSaison']['id']);
+    }
+
+    public function testPlacementBlockedOnClosedSeason(): void
+    {
+        $alice = $this->createUser('alice');
+        $active = $this->makeSaison($alice);
+        $bs = $this->makeBacSaison($alice, $active);
+        $this->client->loginUser($alice);
+        $c = $this->json('POST', '/api/cultures', $this->basePayload($bs));
+
+        $active->setStatut(Saison::STATUT_CLOTUREE);
+        $this->em->flush();
+
+        $this->json('PUT', '/api/cultures/'.$c['id'].'/placement', ['posX' => 1, 'posY' => 1]);
+        $this->assertResponseStatusCodeSame(409);
+    }
+
     public function testMultipleRecoltesAccumulateAndCultureStaysEnPlace(): void
     {
         $alice = $this->createUser('alice');

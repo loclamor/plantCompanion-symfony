@@ -310,10 +310,10 @@ watch(
                         <span v-if="s.datePlantation">planté {{ s.datePlantation }}</span>
                     </td>
                     <td class="text-end text-nowrap">
-                        <button v-if="!s.dateLevee" class="btn btn-sm btn-outline-success" title="Marquer levé" @click="markLeve(s)"><i class="bi bi-arrow-up-circle"></i></button>
-                        <button class="btn btn-sm btn-outline-secondary" :disabled="!s.dateLevee" :title="s.dateLevee ? 'Rempoter' : 'Le semis doit être levé'" @click="rempoter(s)"><i class="bi bi-arrow-repeat"></i></button>
-                        <button class="btn btn-sm btn-outline-primary" :disabled="!s.dateLevee" :title="s.dateLevee ? 'Marquer planté' : 'Le semis doit être levé'" @click="markPlante(s)"><i class="bi bi-tree"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" title="Échec" @click="markEchec(s)"><i class="bi bi-x-octagon"></i></button>
+                        <button v-if="s.statut !== 'plante' && !s.dateLevee" class="btn btn-sm btn-outline-success" title="Marquer levé" @click="markLeve(s)"><i class="bi bi-arrow-up-circle"></i></button>
+                        <button v-if="s.statut !== 'plante'" class="btn btn-sm btn-outline-secondary" :disabled="!s.dateLevee" :title="s.dateLevee ? 'Rempoter' : 'Le semis doit être levé'" @click="rempoter(s)"><i class="bi bi-arrow-repeat"></i></button>
+                        <button v-if="s.statut !== 'plante'" class="btn btn-sm btn-outline-primary" :disabled="!s.dateLevee" :title="s.dateLevee ? 'Marquer planté' : 'Le semis doit être levé'" @click="markPlante(s)"><i class="bi bi-tree"></i></button>
+                        <button v-if="s.statut !== 'plante'" class="btn btn-sm btn-outline-danger" title="Échec" @click="markEchec(s)"><i class="bi bi-x-octagon"></i></button>
                         <router-link class="btn btn-sm btn-outline-dark" :to="{ name: 'semis-edit', params: { id: s.id } }" title="Éditer"><i class="bi bi-pencil"></i></router-link>
                         <button class="btn btn-sm btn-outline-danger" title="Supprimer" @click="removeSemis(s)"><i class="bi bi-trash"></i></button>
                     </td>

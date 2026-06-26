@@ -116,14 +116,23 @@ final class BacSaisonApiController extends AbstractController
 
         $data = json_decode($request->getContent(), true) ?? [];
 
-        // Taille physique figée : tout changement est refusé (409). On compare
-        // uniquement les champs présents dans le payload.
-        foreach (['largeur', 'longueur', 'posX', 'posY'] as $frozen) {
+        // Taille physique figée : tout changement de largeur/longueur est refusé (409).
+        // La position (posX/posY) et le découpage restent modifiables tant que la saison
+        // est active (drag-drop du plan, cf. Phase 6).
+        foreach (['largeur', 'longueur'] as $frozen) {
             if (\array_key_exists($frozen, $data) && (int) $data[$frozen] !== $this->currentFrozen($bacSaison, $frozen)) {
                 return new JsonResponse([
-                    'message' => 'La taille physique et la position du bac sont figées pour la saison ; seul le découpage (lignes/colonnes) est modifiable.',
+                    'message' => 'La taille physique du bac est figée pour la saison ; position et découpage restent modifiables.',
                 ], Response::HTTP_CONFLICT);
             }
+        }
+
+        // Position dans le plan du potager : éditable (saison active).
+        if (\array_key_exists('posX', $data)) {
+            $bacSaison->setPosX(max(0, $this->intOr($data['posX'], $bacSaison->getPosX())));
+        }
+        if (\array_key_exists('posY', $data)) {
+            $bacSaison->setPosY(max(0, $this->intOr($data['posY'], $bacSaison->getPosY())));
         }
 
         $errors = $this->applyDecoupage($bacSaison, $data, $bacSaison->getBac());

@@ -150,6 +150,39 @@ final class CultureApiController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    #[Route('/{id}/placement', name: 'api_culture_placement', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function placement(Request $request, Culture $culture, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(OwnerVoter::EDIT, $culture);
+        if (null !== $resp = $this->guard($culture->getSaison())) {
+            return $resp;
+        }
+
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        // Déplacement inter-bac optionnel ; sinon on garde le bac courant.
+        if (\array_key_exists('bacSaison', $data)) {
+            $bacSaison = $this->resolveOwned($this->bacSaisons, $data['bacSaison'], $user);
+            if (null === $bacSaison) {
+                return new JsonResponse(['errors' => ['bacSaison' => 'Bac de la saison invalide.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $culture->setBacSaison($bacSaison);
+            $culture->setSaison($bacSaison->getSaison());
+        }
+
+        $culture->setPosX($this->intOr($data['posX'] ?? null, $culture->getPosX()));
+        $culture->setPosY($this->intOr($data['posY'] ?? null, $culture->getPosY()));
+
+        $placement = $this->validatePlacement($culture);
+        if (null !== $placement) {
+            return $placement;
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse(\App\Service\Utf8::clean($this->serialize($culture)));
+    }
+
     #[Route('/{id}/recoltes', name: 'api_culture_recolte_add', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function addRecolte(Request $request, Culture $culture, #[CurrentUser] Utilisateur $user): JsonResponse
     {

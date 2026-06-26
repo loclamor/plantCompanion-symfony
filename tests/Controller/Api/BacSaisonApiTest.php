@@ -89,7 +89,7 @@ class BacSaisonApiTest extends DatabaseTestCase
         $this->assertSame(10, $updated['colonnes']);
     }
 
-    public function testPhysicalSizeFrozen(): void
+    public function testPhysicalSizeFrozenButPositionEditable(): void
     {
         $alice = $this->createUser('alice');
         $saison = $this->makeSaison($alice);
@@ -98,18 +98,36 @@ class BacSaisonApiTest extends DatabaseTestCase
 
         $created = $this->json('POST', '/api/bac-saisons', ['bac' => $bac->getId(), 'saison' => $saison->getId()]);
 
-        // Tenter de changer la largeur (figée) → 409.
+        // Taille physique figée : changer la largeur → 409.
         $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['largeur' => 200]);
         $this->assertResponseStatusCodeSame(409);
 
-        // Tenter de déplacer (posX figé) → 409.
-        $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['posX' => 5]);
-        $this->assertResponseStatusCodeSame(409);
+        // Position dans le plan : éditable sur saison active (Phase 6).
+        $moved = $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['posX' => 50, 'posY' => 30]);
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(50, $moved['posX']);
+        $this->assertSame(30, $moved['posY']);
 
         // Renvoyer la même valeur figée + changer le découpage → OK.
         $ok = $this->json('PUT', '/api/bac-saisons/'.$created['id'], ['largeur' => 120, 'lignes' => 3]);
         $this->assertResponseIsSuccessful();
         $this->assertSame(3, $ok['lignes']);
+    }
+
+    public function testPositionNotEditableOnClosedSeason(): void
+    {
+        $alice = $this->createUser('alice');
+        $closed = $this->makeSaison($alice, '2025', 2025, Saison::STATUT_CLOTUREE);
+        $bac = $this->makeBac($alice);
+        $bs = (new BacSaison())
+            ->setUtilisateur($alice)->setBac($bac)->setSaison($closed)
+            ->setLargeur(120)->setLongueur(80)->setLignes(4)->setColonnes(6);
+        $this->em->persist($bs);
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+        $this->json('PUT', '/api/bac-saisons/'.$bs->getId(), ['posX' => 50]);
+        $this->assertResponseStatusCodeSame(409);
     }
 
     public function testWriteBlockedOnClosedSeason(): void
