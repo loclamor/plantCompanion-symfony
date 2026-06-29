@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use App\Service\CurrentGroup;
+use App\Service\CurrentSeason;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -88,6 +89,24 @@ final class AuthController extends AbstractController
         $data = json_decode($request->getContent(), true) ?? [];
         $id = $data['id'] ?? null;
         $currentGroup->set(null === $id ? null : (int) $id);
+
+        return new JsonResponse(['id' => null === $id ? null : (int) $id]);
+    }
+
+    #[Route('/current-season', name: 'api_current_season_get', methods: ['GET'])]
+    public function getCurrentSeason(#[CurrentUser] Utilisateur $user, CurrentSeason $currentSeason): JsonResponse
+    {
+        $saison = $currentSeason->resolve($user);
+
+        return new JsonResponse(['id' => $saison?->getId()]);
+    }
+
+    #[Route('/current-season', name: 'api_current_season_set', methods: ['PUT'])]
+    public function setCurrentSeason(Request $request, CurrentSeason $currentSeason): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+        $id = $data['id'] ?? null;
+        $currentSeason->set(null === $id ? null : (int) $id);
 
         return new JsonResponse(['id' => null === $id ? null : (int) $id]);
     }
