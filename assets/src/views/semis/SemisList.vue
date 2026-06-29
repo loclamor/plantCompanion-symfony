@@ -69,30 +69,46 @@ function reset() {
     submit();
 }
 
-// Regroupement par type + date de semis + méthode.
+// Regroupement par graine (toutes dates/méthodes ensemble) ; les semis « sans lot »
+// d'un même type forment un groupe à part. C'est l'unité des actions en lot.
 const groups = computed(() => {
     const map = new Map();
     for (const s of items.value) {
         const graine = s.graineLot?.graine ?? null;
-        const idKey = graine ? `g${graine.id}` : `t${s.graineType?.id}`;
-        const key = `${idKey}|${s.dateSemis}|${s.methode}`;
+        const key = graine ? `g${graine.id}` : `t${s.graineType?.id}|none`;
         if (!map.has(key)) {
             map.set(key, {
                 key,
                 graine,
+                graineId: graine?.id ?? null,
                 graineType: s.graineType,
-                dateSemis: s.dateSemis,
-                methode: s.methode,
+                dates: new Set(),
+                methodes: new Set(),
                 semis: [],
                 counts: { seme: 0, leve: 0, plante: 0, echec: 0 },
             });
         }
         const g = map.get(key);
         g.semis.push(s);
+        g.dates.add(s.dateSemis);
+        g.methodes.add(s.methode);
         g.counts[s.statut] = (g.counts[s.statut] ?? 0) + 1;
     }
     return [...map.values()];
 });
+
+function methodeLabel(g) {
+    if (g.methodes.size > 1) return 'Mixte';
+    return g.methodes.has('godet') ? 'Godet' : 'Direct';
+}
+
+// Action en lot => nombre de semis du groupe sur lesquels elle est applicable.
+const BATCH_ELIGIBLE = {
+    lever: (g) => g.counts.seme,
+    rempoter: (g) => g.counts.leve,
+    planter: (g) => g.counts.leve,
+    echec: (g) => g.counts.seme + g.counts.leve,
+};
 
 // Niveau supérieur : sections par type de graine (toujours visibles), contenant
 // les groupes par graine. Décompte agrégé par type.
@@ -161,6 +177,47 @@ async function confirmDateModal() {
     const date = dateModal.date;
     closeDateModal();
     await action(date);
+}
+
+// Modale d'action en lot : nombre + date (sauf échec), appliqué aux N plus anciens éligibles.
+const batchModal = reactive({ open: false, title: '', action: null, group: null, needsDate: true, date: '', count: 1, max: 0 });
+function openBatch(g, action, title, needsDate) {
+    const max = BATCH_ELIGIBLE[action](g);
+    if (max < 1) return;
+    batchModal.open = true;
+    batchModal.title = title;
+    batchModal.action = action;
+    batchModal.group = g;
+    batchModal.needsDate = needsDate;
+    batchModal.date = today();
+    batchModal.count = max;
+    batchModal.max = max;
+}
+function closeBatch() {
+    batchModal.open = false;
+    batchModal.action = null;
+    batchModal.group = null;
+}
+async function confirmBatch() {
+    const m = batchModal;
+    const count = Math.min(Math.max(1, Number(m.count) || 0), m.max);
+    if (count < 1 || (m.needsDate && !m.date)) return;
+    const payload = {
+        saison: seasons.currentId,
+        graineType: m.group.graineType?.id,
+        graine: m.group.graineId ?? null,
+        action: m.action,
+        count,
+    };
+    if (m.needsDate) payload.date = m.date;
+    closeBatch();
+    error.value = null;
+    try {
+        await http.post('/semis/batch-action', payload);
+        await load();
+    } catch (e) {
+        error.value = e.response?.data?.message ?? 'Action en lot impossible.';
+    }
 }
 
 async function patch(s, changes) {
@@ -269,7 +326,9 @@ watch(
                 <tr class="table-secondary">
                     <td></td>
                     <td><strong>{{ sec.graineType?.name }}</strong> <span class="badge text-bg-secondary">{{ sec.graineType?.code }}</span></td>
-                    <td colspan="3">
+                    <td></td>
+                    <td></td>
+                    <td>
                         <span v-for="(n, k) in sec.counts" :key="k">
                             <span v-if="n > 0" class="badge me-1" :class="`text-bg-${SEMIS_STATUT[k].color}`">{{ n }} {{ SEMIS_STATUT[k].label.toLowerCase() }}</span>
                         </span>
@@ -288,22 +347,33 @@ watch(
                             {{ g.graineType?.name }} <span class="badge text-bg-light text-dark">sans lot</span>
                         </template>
                     </td>
-                    <td>{{ g.dateSemis }}</td>
-                    <td>{{ g.methode === 'godet' ? 'Godet' : 'Direct' }}</td>
+                    <td></td>
+                    <td>{{ methodeLabel(g) }}</td>
                     <td>
-                        <span v-for="(n, k) in g.counts" :key="k">
-                            <span v-if="n > 0" class="badge me-1" :class="`text-bg-${SEMIS_STATUT[k].color}`">{{ n }} {{ SEMIS_STATUT[k].label.toLowerCase() }}</span>
-                        </span>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span>
+                                <span v-for="(n, k) in g.counts" :key="k">
+                                    <span v-if="n > 0" class="badge me-1" :class="`text-bg-${SEMIS_STATUT[k].color}`">{{ n }} {{ SEMIS_STATUT[k].label.toLowerCase() }}</span>
+                                </span>
+                            </span>
+                            <div class="btn-group btn-group-sm" @click.stop>
+                                <button class="btn btn-outline-success" :disabled="!g.counts.seme" title="Lever en lot" @click="openBatch(g, 'lever', 'Lever en lot', true)"><i class="bi bi-arrow-up-circle"></i></button>
+                                <button class="btn btn-outline-secondary" :disabled="!g.counts.leve" title="Rempoter en lot" @click="openBatch(g, 'rempoter', 'Rempoter en lot', true)"><i class="bi bi-arrow-repeat"></i></button>
+                                <button class="btn btn-outline-primary" :disabled="!g.counts.leve" title="Planter en lot" @click="openBatch(g, 'planter', 'Planter en lot', true)"><i class="bi bi-tree"></i></button>
+                                <button class="btn btn-outline-danger" :disabled="!(g.counts.seme + g.counts.leve)" title="Échec en lot" @click="openBatch(g, 'echec', 'Marquer en échec en lot', false)"><i class="bi bi-x-octagon"></i></button>
+                            </div>
+                        </div>
                     </td>
                     <td class="text-end fw-bold">{{ g.semis.length }}</td>
                 </tr>
                 <template v-if="expanded.has(g.key)">
                 <tr v-for="s in g.semis" :key="s.id">
                     <td></td>
-                    <td colspan="2">
+                    <td>
                         <span class="badge me-2" :class="`text-bg-${SEMIS_STATUT[s.statut].color}`">{{ SEMIS_STATUT[s.statut].label }}</span>
                         <span v-if="s.graineLot" class="text-muted small">lot {{ s.graineLot.graine?.code }}</span>
                     </td>
+                    <td class="small text-muted">{{ s.dateSemis }}</td>
                     <td colspan="2" class="small text-muted">
                         <span v-if="s.dateLevee">levé {{ s.dateLevee }} · </span>
                         <span v-if="s.rempotages.length">{{ s.rempotages.length }} rempotage(s) · </span>
@@ -342,6 +412,39 @@ watch(
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" @click="closeDateModal">Annuler</button>
                         <button type="submit" class="btn btn-primary" :disabled="!dateModal.date">Valider</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    </template>
+
+    <!-- Modale d'action en lot -->
+    <template v-if="batchModal.open">
+        <div class="modal d-block" tabindex="-1" @click.self="closeBatch">
+            <div class="modal-dialog">
+                <form class="modal-content" @submit.prevent="confirmBatch">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ batchModal.title }}</h5>
+                        <button type="button" class="btn-close" @click="closeBatch"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-2">
+                            {{ batchModal.group?.graine ? batchModal.group.graine.code + ' · ' + batchModal.group.graine.name : batchModal.group?.graineType?.name }}
+                            · {{ batchModal.max }} semis éligible(s), les plus anciens d'abord.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input v-model.number="batchModal.count" type="number" class="form-control" min="1" :max="batchModal.max" required autofocus>
+                        </div>
+                        <div v-if="batchModal.needsDate" class="mb-1">
+                            <label class="form-label">Date</label>
+                            <input v-model="batchModal.date" type="date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" @click="closeBatch">Annuler</button>
+                        <button type="submit" class="btn btn-primary" :disabled="batchModal.count < 1 || (batchModal.needsDate && !batchModal.date)">Valider</button>
                     </div>
                 </form>
             </div>

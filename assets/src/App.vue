@@ -127,6 +127,9 @@ async function logout() {
                         <li class="nav-item">
                             <router-link class="nav-link" :to="{ name: 'plan-index' }"><i class="bi bi-map"></i> Plan</router-link>
                         </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" :to="{ name: 'potager-print' }"><i class="bi bi-printer"></i> Impression</router-link>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Paramétrage</a>
                             <ul class="dropdown-menu">

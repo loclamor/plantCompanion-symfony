@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Graine;
 use App\Entity\GraineType;
 use App\Entity\Saison;
 use App\Entity\Semis;
@@ -61,6 +62,36 @@ class SemisRepository extends ServiceEntityRepository
         return $this->filteredQb($user, $saison, $statut, $graineType)
             ->orderBy('s.dateSemis', 'DESC')
             ->addOrderBy('s.graineType', 'ASC')
+            ->addOrderBy('s.id', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Semis éligibles à une action en lot : scope user + saison + graineType,
+     * filtrés par graine (ou « sans lot » si null) et par statuts autorisés,
+     * triés du plus ancien au plus récent (FIFO).
+     *
+     * @param string[] $statuts
+     *
+     * @return Semis[]
+     */
+    public function findForBatchAction(Utilisateur $user, Saison $saison, GraineType $graineType, ?Graine $graine, array $statuts): array
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->andWhere('s.utilisateur = :user')->setParameter('user', $user)
+            ->andWhere('s.saison = :saison')->setParameter('saison', $saison)
+            ->andWhere('s.graineType = :gt')->setParameter('gt', $graineType)
+            ->andWhere('s.statut IN (:statuts)')->setParameter('statuts', $statuts);
+
+        if (null !== $graine) {
+            $qb->join('s.graineLot', 'l')->andWhere('l.graine = :graine')->setParameter('graine', $graine);
+        } else {
+            $qb->andWhere('s.graineLot IS NULL');
+        }
+
+        return $qb->orderBy('s.dateSemis', 'ASC')
             ->addOrderBy('s.id', 'ASC')
             ->getQuery()
             ->getResult()

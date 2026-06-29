@@ -86,13 +86,13 @@ watch(() => form.bacSaison, async () => {
     await loadOccupied();
 });
 
-// Libellé d'un semis : code « TC<X> — Nom » de la graine concrète si un lot est
-// rattaché, sinon repli sur le type de graine (« TC — Nom du type »).
+// Libellé d'un semis : code « TC<X> · Nom » de la graine concrète si un lot est
+// rattaché, sinon repli sur le type de graine (« TC · Nom du type »).
 function semisLabel(s) {
     const g = s.graineLot?.graine;
-    if (g) return `${g.code} — ${g.name}`;
+    if (g) return `${g.code} · ${g.name}`;
     const t = s.graineType;
-    return t ? `${t.code} — ${t.name}` : '';
+    return t ? `${t.code} · ${t.name}` : '';
 }
 
 // Pré-remplir le nom + type depuis le semis choisi comme origine.
@@ -212,7 +212,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <h1 class="mb-3">{{ isEdit ? 'Éditer — culture' : 'Nouvelle culture' }}</h1>
+    <h1 class="mb-3">{{ isEdit ? 'Éditer · culture' : 'Nouvelle culture' }}</h1>
 
     <div v-if="loading" class="text-center my-5">
         <div class="spinner-border text-primary" role="status"></div>
@@ -246,7 +246,7 @@ onMounted(async () => {
                     <select v-model="form.semis" class="form-select">
                         <option :value="null">— Ajout direct —</option>
                         <option v-for="s in semisLeves" :key="s.id" :value="s.id">
-                            {{ semisLabel(s) }} — semé {{ s.dateSemis }}
+                            {{ semisLabel(s) }} · semé {{ s.dateSemis }}
                         </option>
                     </select>
                     <div class="form-text">Le semis choisi passera « planté ».</div>

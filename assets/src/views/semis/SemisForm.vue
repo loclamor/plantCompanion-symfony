@@ -162,7 +162,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <h1 class="mb-3">{{ isEdit ? 'Éditer — semis' : 'Nouveau semis' }}</h1>
+    <h1 class="mb-3">{{ isEdit ? 'Éditer · semis' : 'Nouveau semis' }}</h1>
 
     <div v-if="loading" class="text-center my-5">
         <div class="spinner-border text-primary" role="status"></div>
@@ -195,7 +195,7 @@ onMounted(async () => {
                     <label class="form-label">Graine (optionnel)</label>
                     <select v-model="form.graine" class="form-select" :disabled="!form.graineType || graines.length === 0">
                         <option :value="null">— Aucune —</option>
-                        <option v-for="g in graines" :key="g.id" :value="g.id">{{ g.code }} — {{ g.name }}</option>
+                        <option v-for="g in graines" :key="g.id" :value="g.id">{{ g.code }} · {{ g.name }}</option>
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -203,7 +203,7 @@ onMounted(async () => {
                     <select v-model="form.graineLot" class="form-select" :disabled="!form.graine || lots.length === 0">
                         <option :value="null">— Aucun —</option>
                         <option v-for="l in lots" :key="l.id" :value="l.id">
-                            {{ l.source }} {{ l.dateAcquisition }} — reste {{ l.quantiteRestante }}
+                            {{ l.source }} {{ l.dateAcquisition }} · reste {{ l.quantiteRestante }}
                         </option>
                     </select>
                     <div class="form-text">Le lot choisi est décrémenté de 1.</div>

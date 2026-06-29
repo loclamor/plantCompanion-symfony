@@ -8,6 +8,7 @@ use App\Entity\Semis;
 use App\Entity\Utilisateur;
 use App\Exception\ClosedSeasonException;
 use App\Repository\GraineLotRepository;
+use App\Repository\GraineRepository;
 use App\Repository\GraineTypeRepository;
 use App\Repository\RempotageRepository;
 use App\Repository\SaisonRepository;
@@ -34,11 +35,20 @@ final class SemisApiController extends AbstractController
     private const METHODES = [Semis::METHODE_DIRECT, Semis::METHODE_GODET];
     private const STATUTS = [Semis::STATUT_SEME, Semis::STATUT_LEVE, Semis::STATUT_PLANTE, Semis::STATUT_ECHEC];
 
+    /** Action en lot => statuts des semis sur lesquels elle est applicable. */
+    private const BATCH_ACTIONS = [
+        'lever' => [Semis::STATUT_SEME],
+        'rempoter' => [Semis::STATUT_LEVE],
+        'planter' => [Semis::STATUT_LEVE],
+        'echec' => [Semis::STATUT_SEME, Semis::STATUT_LEVE],
+    ];
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly SemisRepository $semis,
         private readonly SaisonRepository $saisons,
         private readonly GraineTypeRepository $graineTypes,
+        private readonly GraineRepository $graines,
         private readonly GraineLotRepository $graineLots,
         private readonly RempotageRepository $rempotages,
         private readonly CurrentSeason $currentSeason,
@@ -144,6 +154,83 @@ final class SemisApiController extends AbstractController
         return new JsonResponse(\App\Service\Utf8::clean([
             'items' => array_map(fn (Semis $s) => $this->serialize($s), $created),
         ]), Response::HTTP_CREATED);
+    }
+
+    /**
+     * Action en lot sur les semis d'une graine (ou « sans lot » d'un type) :
+     * applique l'action (lever/rempoter/planter/echec) aux N premiers semis
+     * éligibles (statut autorisé), les plus anciens d'abord.
+     */
+    #[Route('/batch-action', name: 'api_semis_batch_action', methods: ['POST'])]
+    public function batchAction(Request $request, #[CurrentUser] Utilisateur $user): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        $saison = $this->resolveOwned($this->saisons, $data['saison'] ?? null, $user)
+            ?? $this->currentSeason->resolve($user);
+        if (null === $saison) {
+            return new JsonResponse(['errors' => ['saison' => 'Aucune saison sélectionnée.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        if (null !== $resp = $this->guard($saison)) {
+            return $resp;
+        }
+
+        $action = $data['action'] ?? null;
+        if (!\is_string($action) || !isset(self::BATCH_ACTIONS[$action])) {
+            return new JsonResponse(['errors' => ['action' => 'Action invalide.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $graineType = $this->resolveOwned($this->graineTypes, $data['graineType'] ?? null, $user);
+        if (null === $graineType) {
+            return new JsonResponse(['errors' => ['graineType' => 'Type de graine invalide.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        $graine = $this->resolveOwned($this->graines, $data['graine'] ?? null, $user);
+
+        $count = (int) ($data['count'] ?? 0);
+        if ($count < 1) {
+            return new JsonResponse(['errors' => ['count' => 'Nombre invalide (≥ 1).']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Date requise sauf pour l'échec.
+        $date = $this->parseDate($data['date'] ?? null);
+        if ('echec' !== $action && null === $date) {
+            return new JsonResponse(['errors' => ['date' => 'Date invalide ou obligatoire.']], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $eligible = $this->semis->findForBatchAction($user, $saison, $graineType, $graine, self::BATCH_ACTIONS[$action]);
+        $targets = \array_slice($eligible, 0, $count);
+
+        foreach ($targets as $s) {
+            $this->applyBatchAction($s, $action, $date, $user);
+        }
+        $this->em->flush();
+
+        return new JsonResponse([
+            'applied' => \count($targets),
+            'requested' => $count,
+            'eligible' => \count($eligible),
+        ]);
+    }
+
+    private function applyBatchAction(Semis $s, string $action, ?\DateTimeImmutable $date, Utilisateur $user): void
+    {
+        switch ($action) {
+            case 'lever':
+                $s->setDateLevee($date)->setEchec(false);
+                break;
+            case 'planter':
+                $s->setDatePlantation($date)->setEchec(false);
+                break;
+            case 'echec':
+                $s->setEchec(true);
+                break;
+            case 'rempoter':
+                $rempotage = (new Rempotage())->setUtilisateur($user)->setDate($date);
+                $s->addRempotage($rempotage);
+                $this->em->persist($rempotage);
+                break;
+        }
+        $s->recomputeStatut();
     }
 
     #[Route('/{id}', name: 'api_semis_show', methods: ['GET'], requirements: ['id' => '\d+'])]

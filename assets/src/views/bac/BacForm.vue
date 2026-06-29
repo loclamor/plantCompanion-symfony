@@ -64,7 +64,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <h1 class="mb-3">{{ isEdit ? 'Éditer — bac' : 'Nouveau bac' }}</h1>
+    <h1 class="mb-3">{{ isEdit ? 'Éditer · bac' : 'Nouveau bac' }}</h1>
 
     <div v-if="loading" class="text-center my-5">
         <div class="spinner-border text-primary" role="status"></div>

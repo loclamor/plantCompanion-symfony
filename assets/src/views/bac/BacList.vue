@@ -142,7 +142,7 @@ onMounted(load);
         </table>
 
         <h2 class="h5 text-muted mt-4">
-            Découpage — saison courante
+            Découpage · saison courante
             <span v-if="currentSaison" class="badge" :class="saisonClosed ? 'text-bg-secondary' : 'text-bg-success'">
                 {{ currentSaison.name }}{{ saisonClosed ? ' (clôturée)' : '' }}
             </span>

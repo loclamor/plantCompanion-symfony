@@ -130,7 +130,7 @@ onMounted(loadGraineTypes);
                         <td>
                             <select v-model="row.graineLot" class="form-select form-select-sm" :disabled="!row.graine || row.lots.length === 0">
                                 <option :value="null">—</option>
-                                <option v-for="l in row.lots" :key="l.id" :value="l.id">{{ l.source }} — reste {{ l.quantiteRestante }}</option>
+                                <option v-for="l in row.lots" :key="l.id" :value="l.id">{{ l.source }} · reste {{ l.quantiteRestante }}</option>
                             </select>
                         </td>
                         <td>

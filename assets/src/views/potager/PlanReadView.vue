@@ -12,12 +12,12 @@ const saison = ref(null);
 const loading = ref(false);
 const error = ref(null);
 
-// Libellé d'un semis : « TC<X> — Nom » de la graine si un lot est rattaché, sinon type.
+// Libellé d'un semis : « TC<X> · Nom » de la graine si un lot est rattaché, sinon type.
 function semisLabel(s) {
     const g = s.graineLot?.graine;
-    if (g) return `${g.code} — ${g.name}`;
+    if (g) return `${g.code} · ${g.name}`;
     const t = s.graineType;
-    return t ? `${t.code} — ${t.name}` : '';
+    return t ? `${t.code} · ${t.name}` : '';
 }
 
 const readonly = computed(() => saison.value?.statut === 'cloturee');
@@ -204,7 +204,7 @@ onMounted(load);
             class="plan-bac"
             :class="{ clickable: !readonly }"
             :style="bacStyle(b)"
-            :title="`${b.bac?.name} — cliquer pour planter`"
+            :title="`${b.bac?.name} · cliquer pour planter`"
             @click="openPlant(b)"
         >
             <div class="plan-bac-name">{{ b.bac?.name }}</div>
@@ -245,7 +245,7 @@ onMounted(load);
                         <select v-model="modal.semis" class="form-select" @change="onSemisChange">
                             <option :value="null">— Ajout direct —</option>
                             <option v-for="s in semisLeves" :key="s.id" :value="s.id">
-                                {{ semisLabel(s) }} — semé {{ s.dateSemis }}
+                                {{ semisLabel(s) }} · semé {{ s.dateSemis }}
                             </option>
                         </select>
                         <div class="form-text">Le semis choisi passera « planté ».</div>

@@ -203,7 +203,6 @@ onMounted(load);
             <tr>
                 <th>Nom</th>
                 <th>Bac</th>
-                <th>Case</th>
                 <th>Plantation</th>
                 <th>Statut</th>
                 <th></th>
@@ -214,7 +213,6 @@ onMounted(load);
             <tr v-for="c in filtered" :key="c.id">
                 <td>{{ c.name }}</td>
                 <td>{{ c.bacSaison?.bac?.name ?? '—' }}</td>
-                <td>({{ c.posX }}, {{ c.posY }})<span v-if="c.largeurCases > 1 || c.hauteurCases > 1"> · {{ c.largeurCases }}×{{ c.hauteurCases }}</span></td>
                 <td>{{ c.datePlantation }}</td>
                 <td><span class="badge" :class="statutBadge(c.statut)">{{ STATUT_LABELS[c.statut] }}</span></td>
                 <td><span v-if="c.perenne" class="badge text-bg-info">Pérenne</span></td>
@@ -233,7 +231,7 @@ onMounted(load);
                 </td>
             </tr>
             <tr v-if="filtered.length === 0">
-                <td colspan="7" class="text-muted">Aucune culture.</td>
+                <td colspan="6" class="text-muted">Aucune culture.</td>
             </tr>
         </tbody>
     </table>
@@ -242,7 +240,7 @@ onMounted(load);
     <div v-if="recolteModal.open" class="culture-modal-backdrop" @click.self="closeRecolte">
         <div class="card shadow culture-modal" role="dialog" aria-modal="true">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-basket"></i> Récolte — {{ recolteModal.culture?.name }}</span>
+                <span><i class="bi bi-basket"></i> Récolte · {{ recolteModal.culture?.name }}</span>
                 <button type="button" class="btn-close" aria-label="Fermer" @click="closeRecolte"></button>
             </div>
             <div class="card-body">

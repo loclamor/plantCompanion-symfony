@@ -52,7 +52,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <h1 class="mb-3">{{ isEdit ? 'Éditer — type de graine' : 'Nouveau — type de graine' }}</h1>
+    <h1 class="mb-3">{{ isEdit ? 'Éditer · type de graine' : 'Nouveau · type de graine' }}</h1>
 
     <div v-if="loading" class="text-center my-5">
         <div class="spinner-border text-primary" role="status"></div>

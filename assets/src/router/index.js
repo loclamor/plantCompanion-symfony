@@ -37,6 +37,7 @@ const routes = [
     { path: '/potager/cultures/:id/edit', name: 'culture-edit', component: () => import('../views/culture/CultureForm.vue'), props: true },
     { path: '/potager/plan', name: 'plan-index', component: () => import('../views/potager/PlanReadView.vue') },
     { path: '/potager/plan-edition', name: 'plan-edit', component: () => import('../views/potager/PlanView.vue') },
+    { path: '/potager/impression', name: 'potager-print', component: () => import('../views/potager/PotagerPrintView.vue') },
     { path: '/jardin/parametrage/:resource', name: 'parametrage-index', component: () => import('../views/ParametrageList.vue') },
     { path: '/jardin/parametrage/:resource/new', name: 'parametrage-new', component: () => import('../views/ParametrageForm.vue') },
     { path: '/jardin/parametrage/:resource/:id/edit', name: 'parametrage-edit', component: () => import('../views/ParametrageForm.vue') },

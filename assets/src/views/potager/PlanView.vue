@@ -222,7 +222,7 @@ onMounted(load);
 <template>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">
-            <i class="bi bi-pencil-square"></i> Plan du potager — édition
+            <i class="bi bi-pencil-square"></i> Plan du potager · édition
             <span v-if="saison" class="badge ms-2" :class="readonly ? 'text-bg-secondary' : 'text-bg-success'">
                 {{ saison.name }}{{ readonly ? ' (clôturée)' : '' }}
             </span>
@@ -264,7 +264,7 @@ onMounted(load);
 
         <div v-if="selectedBac" class="card mt-4 shadow-sm" style="max-width: 640px">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-grid-3x3"></i> {{ selectedBac.bac?.name }} — {{ selectedBac.lignes }}×{{ selectedBac.colonnes }} cases</span>
+                <span><i class="bi bi-grid-3x3"></i> {{ selectedBac.bac?.name }} · {{ selectedBac.lignes }}×{{ selectedBac.colonnes }} cases</span>
                 <button type="button" class="btn-close" aria-label="Fermer" @click="selectedBacId = null"></button>
             </div>
             <div class="card-body">

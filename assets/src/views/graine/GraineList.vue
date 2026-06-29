@@ -20,7 +20,7 @@ async function load() {
 }
 
 async function remove(item) {
-    if (!window.confirm(`Supprimer la graine « ${item.code} — ${item.name} » ?`)) return;
+    if (!window.confirm(`Supprimer la graine « ${item.code} · ${item.name} » ?`)) return;
     try {
         await http.delete(`/graines/${item.id}`);
         await load();

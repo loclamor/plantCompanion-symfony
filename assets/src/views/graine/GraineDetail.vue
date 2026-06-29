@@ -124,7 +124,7 @@ onMounted(load);
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <router-link :to="{ name: 'graine-index' }" class="text-decoration-none small">&larr; Grainothèque</router-link>
-                <h1 class="mb-0">{{ graine.code }} — {{ graine.name }}</h1>
+                <h1 class="mb-0">{{ graine.code }} · {{ graine.name }}</h1>
             </div>
             <router-link class="btn btn-outline-primary" :to="{ name: 'graine-edit', params: { id: graine.id } }">
                 <i class="bi bi-pencil"></i> Éditer
