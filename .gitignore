@@ -7,8 +7,8 @@
 ###< front ###
 
 ###> deploy (FTP) ###
-# Script de migration jetable — token dedans, ne jamais committer.
-/public/_migrate.php
+# public/_migrate.php est désormais committé : token via env (MIGRATE_TOKEN),
+# plus aucun secret en clair. Doit être versionné pour être déployé par l'Action.
 # Procédure de déploiement (token en clair dedans).
 /DEPLOY.md
 ###< deploy ###
