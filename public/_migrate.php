@@ -58,14 +58,23 @@ $exitCode = $application->run(new ArrayInput([
     '--allow-no-migration' => true,
 ]), $output);
 
-// HTTP 500 si échec → `curl -f` côté CI fait échouer le job (BufferedOutput
-// n'a encore rien émis, donc on peut fixer le code avant le premier echo).
-if ($exitCode !== 0) {
+// Vide le cache prod : var/ est exclu du dépôt FTP, donc le serveur conserve un
+// cache compilé périmé (routes/conteneur) tant qu'on ne le purge pas → les
+// nouvelles routes renvoient 404. On le fait après les migrations, même si
+// celles-ci échouent (le code déployé doit être routable dans tous les cas).
+$cacheCode = $application->run(new ArrayInput([
+    'command' => 'cache:clear',
+    '--no-interaction' => true,
+]), $output);
+
+// HTTP 500 si l'une des deux étapes échoue → `curl -f` côté CI fait échouer le
+// job (BufferedOutput n'a encore rien émis, on fixe le code avant le 1er echo).
+if ($exitCode !== 0 || $cacheCode !== 0) {
     http_response_code(500);
 }
 
 echo $output->fetch();
-echo "\n--- exit code: {$exitCode} ---\n";
-echo $exitCode === 0
-    ? "OK : migrations à jour.\n"
+echo "\n--- migrate: {$exitCode} | cache:clear: {$cacheCode} ---\n";
+echo ($exitCode === 0 && $cacheCode === 0)
+    ? "OK : migrations à jour, cache prod purgé.\n"
     : "ÉCHEC. Vérifiez .env.local (DATABASE_URL) et var/log/.\n";
