@@ -3,6 +3,7 @@
 namespace App\Tests\Controller\Api;
 
 use App\Entity\Graine;
+use App\Entity\GraineLot;
 use App\Entity\GraineType;
 use App\Entity\Utilisateur;
 use App\Tests\DatabaseTestCase;
@@ -25,9 +26,9 @@ class GraineApiTest extends DatabaseTestCase
         return '' !== $content ? (json_decode($content, true) ?? []) : [];
     }
 
-    private function makeGraineType(Utilisateur $user, string $name = 'Tomate Cerise', string $code = 'TC'): GraineType
+    private function makeGraineType(Utilisateur $user, string $name = 'Tomate Cerise', string $code = 'TC', ?GraineType $parent = null): GraineType
     {
-        $gt = (new GraineType())->setName($name)->setCode($code)->setUtilisateur($user);
+        $gt = (new GraineType())->setName($name)->setCode($code)->setUtilisateur($user)->setParent($parent);
         $this->em->persist($gt);
         $this->em->flush();
 
@@ -41,6 +42,21 @@ class GraineApiTest extends DatabaseTestCase
         $this->em->flush();
 
         return $g;
+    }
+
+    private function addLot(Utilisateur $user, Graine $graine, int $quantiteRestante): GraineLot
+    {
+        $lot = (new GraineLot())
+            ->setGraine($graine)
+            ->setUtilisateur($user)
+            ->setSource('achat')
+            ->setDateAcquisition(new \DateTimeImmutable('2026-01-01'))
+            ->setQuantiteInitiale($quantiteRestante)
+            ->setQuantiteRestante($quantiteRestante);
+        $this->em->persist($lot);
+        $this->em->flush();
+
+        return $lot;
     }
 
     public function testListRequiresAuth(): void
@@ -143,6 +159,30 @@ class GraineApiTest extends DatabaseTestCase
         $this->assertSame('TC1', $list['items'][0]['code']);
     }
 
+    public function testListFilteredByTypeIncludesDescendants(): void
+    {
+        $alice = $this->createUser('alice');
+        $pois = $this->makeGraineType($alice, 'Pois', 'P');
+        $nain = $this->makeGraineType($alice, 'Pois nain', 'PN', $pois);
+        $rame = $this->makeGraineType($alice, 'Pois à rame', 'PR', $pois);
+        $courge = $this->makeGraineType($alice, 'Courge', 'CG');
+        $this->makeGraine($alice, $pois, 'P1');
+        $this->makeGraine($alice, $nain, 'PN1');
+        $this->makeGraine($alice, $rame, 'PR1');
+        $this->makeGraine($alice, $courge, 'CG1');
+        $this->client->loginUser($alice);
+
+        // Filtrer par le parent « Pois » remonte le parent + ses deux sous-types.
+        $list = $this->json('GET', '/api/graines?graineType='.$pois->getId());
+        $codes = array_column($list['items'], 'code');
+        sort($codes);
+        $this->assertSame(['P1', 'PN1', 'PR1'], $codes);
+
+        // Filtrer par l'enfant ne retourne que la sienne.
+        $list = $this->json('GET', '/api/graines?graineType='.$nain->getId());
+        $this->assertSame(['PN1'], array_column($list['items'], 'code'));
+    }
+
     public function testListScopedToOwner(): void
     {
         $alice = $this->createUser('alice');
@@ -157,6 +197,72 @@ class GraineApiTest extends DatabaseTestCase
         $codes = array_column($list['items'], 'code');
         $this->assertContains('TA1', $codes);
         $this->assertNotContains('TB1', $codes);
+    }
+
+    public function testListSearchByText(): void
+    {
+        $alice = $this->createUser('alice');
+        $gt = $this->makeGraineType($alice, 'Tomate Cerise', 'TC');
+        $this->makeGraine($alice, $gt, 'TC1', 'Sweet Million');
+        $this->makeGraine($alice, $gt, 'TC2', 'Black Cherry');
+        $this->client->loginUser($alice);
+
+        // Recherche par nom.
+        $list = $this->json('GET', '/api/graines?q=cherry');
+        $this->assertCount(1, $list['items']);
+        $this->assertSame('TC2', $list['items'][0]['code']);
+
+        // Recherche par code.
+        $list = $this->json('GET', '/api/graines?q=TC1');
+        $this->assertCount(1, $list['items']);
+        $this->assertSame('Sweet Million', $list['items'][0]['name']);
+
+        // Recherche par nom de type (couvre les deux graines).
+        $list = $this->json('GET', '/api/graines?q=tomate');
+        $this->assertCount(2, $list['items']);
+    }
+
+    public function testListFilteredByStock(): void
+    {
+        $alice = $this->createUser('alice');
+        $gt = $this->makeGraineType($alice);
+        $rachat = $this->makeGraine($alice, $gt, 'TC1', 'Rachat'); // 0 → à racheter
+        $faible = $this->makeGraine($alice, $gt, 'TC2', 'Faible');
+        $ok = $this->makeGraine($alice, $gt, 'TC3', 'Ok');
+        $this->addLot($alice, $faible, 5);   // 1..10 → faible
+        $this->addLot($alice, $ok, 8);
+        $this->addLot($alice, $ok, 50);      // total 58 → en quantité
+        $this->client->loginUser($alice);
+
+        $rachatList = $this->json('GET', '/api/graines?stock=rachat');
+        $this->assertSame(['TC1'], array_column($rachatList['items'], 'code'));
+
+        $faibleList = $this->json('GET', '/api/graines?stock=faible');
+        $this->assertSame(['TC2'], array_column($faibleList['items'], 'code'));
+
+        $okList = $this->json('GET', '/api/graines?stock=ok');
+        $this->assertSame(['TC3'], array_column($okList['items'], 'code'));
+        $this->assertSame(58, $okList['items'][0]['stockRestant']);
+    }
+
+    public function testListPagination(): void
+    {
+        $alice = $this->createUser('alice');
+        $gt = $this->makeGraineType($alice);
+        for ($i = 1; $i <= 25; ++$i) {
+            $this->makeGraine($alice, $gt, sprintf('TC%02d', $i), 'Graine '.$i);
+        }
+        $this->client->loginUser($alice);
+
+        $p1 = $this->json('GET', '/api/graines');
+        $this->assertSame(25, $p1['total']);
+        $this->assertSame(2, $p1['pages']);
+        $this->assertSame(1, $p1['page']);
+        $this->assertCount(20, $p1['items']);
+
+        $p2 = $this->json('GET', '/api/graines?page=2');
+        $this->assertSame(2, $p2['page']);
+        $this->assertCount(5, $p2['items']);
     }
 
     public function testCannotEditOthers(): void

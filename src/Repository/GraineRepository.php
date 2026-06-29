@@ -3,9 +3,11 @@
 namespace App\Repository;
 
 use App\Entity\Graine;
+use App\Entity\GraineLot;
 use App\Entity\GraineType;
 use App\Entity\Utilisateur;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -13,9 +15,95 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class GraineRepository extends ServiceEntityRepository
 {
+    /** Seuil (inclus) sous lequel le stock est considéré « faible » ; au-delà « en quantité ». */
+    public const SEUIL_FAIBLE = 10;
+
+    /** Champs de tri autorisés (clé = paramètre public, valeur = expression DQL). */
+    public const SORTABLE = [
+        'code' => 'g.code',
+        'name' => 'g.name',
+        'stock' => 'stock',
+    ];
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Graine::class);
+    }
+
+    /**
+     * QueryBuilder filtré, agrégeant le stock restant (somme des quantités
+     * restantes des lots) via un LEFT JOIN + GROUP BY g.id. L'alias `stock`
+     * (HIDDEN) sert au filtre stock (HAVING) et au tri ; getResult() retourne
+     * donc bien des Graine[].
+     *
+     * @param int[]|null  $graineTypeIds ids de types acceptés (type filtré + ses descendants) ; null = pas de filtre
+     * @param string|null $stockStatus   '', 'rachat' (=0), 'faible' (1..seuil), 'ok' (>seuil)
+     */
+    private function filteredQb(Utilisateur $user, ?string $q, ?array $graineTypeIds, ?string $stockStatus): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('g')
+            ->leftJoin('g.graineType', 'gt')
+            ->leftJoin(GraineLot::class, 'l', 'ON', 'l.graine = g')
+            ->addSelect('COALESCE(SUM(l.quantiteRestante), 0) AS HIDDEN stock')
+            ->andWhere('g.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->groupBy('g.id');
+
+        if (null !== $q && '' !== $q) {
+            $qb->andWhere('g.code LIKE :q OR g.name LIKE :q OR gt.name LIKE :q')
+                ->setParameter('q', '%'.$q.'%');
+        }
+        if (null !== $graineTypeIds && [] !== $graineTypeIds) {
+            $qb->andWhere('g.graineType IN (:graineTypeIds)')->setParameter('graineTypeIds', $graineTypeIds);
+        }
+
+        switch ($stockStatus) {
+            case 'rachat':
+                $qb->having('stock = 0');
+                break;
+            case 'faible':
+                $qb->having('stock >= 1 AND stock <= :seuil')->setParameter('seuil', self::SEUIL_FAIBLE);
+                break;
+            case 'ok':
+                $qb->having('stock > :seuil')->setParameter('seuil', self::SEUIL_FAIBLE);
+                break;
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @return Graine[]
+     */
+    public function findByUserFiltered(Utilisateur $user, ?string $q, ?array $graineTypeIds, ?string $stockStatus, string $sort, string $dir, int $limit, int $offset): array
+    {
+        $field = self::SORTABLE[$sort] ?? 'g.code';
+        $direction = 'desc' === strtolower($dir) ? 'DESC' : 'ASC';
+
+        return $this->filteredQb($user, $q, $graineTypeIds, $stockStatus)
+            ->orderBy($field, $direction)
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Nombre de graines correspondant aux filtres. Le GROUP BY + HAVING empêche
+     * un COUNT direct : on sélectionne g.id (une ligne par graine) et on compte
+     * les lignes côté PHP.
+     */
+    public function countByUserFiltered(Utilisateur $user, ?string $q, ?array $graineTypeIds, ?string $stockStatus): int
+    {
+        $rows = $this->filteredQb($user, $q, $graineTypeIds, $stockStatus)
+            ->select('g.id')
+            ->addSelect('COALESCE(SUM(l.quantiteRestante), 0) AS HIDDEN stock')
+            ->getQuery()
+            ->getScalarResult()
+        ;
+
+        return \count($rows);
     }
 
     /**

@@ -32,6 +32,42 @@ class GraineTypeRepository extends ServiceEntityRepository
     }
 
     /**
+     * Ids de $root et de tous ses descendants (hiérarchie récursive). Le nombre
+     * de types par utilisateur étant faible, on charge tout en mémoire et on
+     * parcourt en largeur la map parent → enfants. Sert au filtre de recherche
+     * (inclure les graines des sous-types) et à la garde anti-cycle.
+     *
+     * @return int[] ids, racine incluse
+     */
+    public function descendantIds(Utilisateur $user, GraineType $root): array
+    {
+        // map[parentId] => GraineType[] des enfants directs
+        $childrenByParent = [];
+        foreach ($this->findByUser($user) as $type) {
+            $parentId = $type->getParent()?->getId();
+            if (null !== $parentId) {
+                $childrenByParent[$parentId][] = $type;
+            }
+        }
+
+        $ids = [];
+        $queue = [$root];
+        while ([] !== $queue) {
+            $current = array_shift($queue);
+            $id = $current->getId();
+            if (null === $id || \in_array($id, $ids, true)) {
+                continue; // garde contre un cycle éventuel
+            }
+            $ids[] = $id;
+            foreach ($childrenByParent[$id] ?? [] as $child) {
+                $queue[] = $child;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
      * Type de graine de l'utilisateur portant ce préfixe de code, en excluant
      * éventuellement un id (l'entité en cours d'édition) — valide l'unicité.
      */

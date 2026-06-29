@@ -24,9 +24,9 @@ class GraineTypeApiTest extends DatabaseTestCase
         return '' !== $content ? (json_decode($content, true) ?? []) : [];
     }
 
-    private function makeGraineType(Utilisateur $user, string $name = 'Tomate Cerise', string $code = 'TC'): GraineType
+    private function makeGraineType(Utilisateur $user, string $name = 'Tomate Cerise', string $code = 'TC', ?GraineType $parent = null): GraineType
     {
-        $gt = (new GraineType())->setName($name)->setCode($code)->setUtilisateur($user);
+        $gt = (new GraineType())->setName($name)->setCode($code)->setUtilisateur($user)->setParent($parent);
         $this->em->persist($gt);
         $this->em->flush();
 
@@ -125,6 +125,66 @@ class GraineTypeApiTest extends DatabaseTestCase
             content: json_encode(['name' => 'Piraté', 'code' => 'TA']),
         );
         $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testCreateWithParentSerialized(): void
+    {
+        $alice = $this->createUser('alice');
+        $pois = $this->makeGraineType($alice, 'Pois', 'P');
+        $this->client->loginUser($alice);
+
+        $created = $this->json('POST', '/api/graine-types', ['name' => 'Pois nain', 'code' => 'PN', 'parent' => $pois->getId()]);
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame($pois->getId(), $created['parentId']);
+        $this->assertSame('Pois', $created['parentName']);
+    }
+
+    public function testParentCanBeCleared(): void
+    {
+        $alice = $this->createUser('alice');
+        $pois = $this->makeGraineType($alice, 'Pois', 'P');
+        $nain = $this->makeGraineType($alice, 'Pois nain', 'PN', $pois);
+        $this->client->loginUser($alice);
+
+        $updated = $this->json('PUT', '/api/graine-types/'.$nain->getId(), ['name' => 'Pois nain', 'code' => 'PN', 'parent' => '']);
+        $this->assertResponseIsSuccessful();
+        $this->assertNull($updated['parentId']);
+    }
+
+    public function testCannotBeOwnParent(): void
+    {
+        $alice = $this->createUser('alice');
+        $pois = $this->makeGraineType($alice, 'Pois', 'P');
+        $this->client->loginUser($alice);
+
+        $data = $this->json('PUT', '/api/graine-types/'.$pois->getId(), ['name' => 'Pois', 'code' => 'P', 'parent' => $pois->getId()]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertArrayHasKey('parent', $data['errors']);
+    }
+
+    public function testCannotParentToOwnDescendant(): void
+    {
+        $alice = $this->createUser('alice');
+        $pois = $this->makeGraineType($alice, 'Pois', 'P');
+        $nain = $this->makeGraineType($alice, 'Pois nain', 'PN', $pois);
+        $this->client->loginUser($alice);
+
+        // Rattacher « Pois » sous son propre descendant « Pois nain » → cycle interdit.
+        $data = $this->json('PUT', '/api/graine-types/'.$pois->getId(), ['name' => 'Pois', 'code' => 'P', 'parent' => $nain->getId()]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertArrayHasKey('parent', $data['errors']);
+    }
+
+    public function testParentFromOtherUserRejected(): void
+    {
+        $alice = $this->createUser('alice');
+        $bob = $this->createUser('bob');
+        $poisBob = $this->makeGraineType($bob, 'Pois', 'P');
+        $this->client->loginUser($alice);
+
+        $data = $this->json('POST', '/api/graine-types', ['name' => 'Pois nain', 'code' => 'PN', 'parent' => $poisBob->getId()]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertArrayHasKey('parent', $data['errors']);
     }
 
     public function testUpdateAndDelete(): void

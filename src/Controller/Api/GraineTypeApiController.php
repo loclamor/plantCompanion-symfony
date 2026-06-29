@@ -53,6 +53,22 @@ final class GraineTypeApiController extends AbstractOwnedCrudApiController
             $entity->setCode($code);
         }
 
+        // Type parent (optionnel, possédé) ; refus des cycles.
+        $parentId = $data['parent'] ?? null;
+        if (null === $parentId || '' === $parentId) {
+            $entity->setParent(null);
+        } else {
+            $parent = $this->resolveOwned($this->repo, $parentId, $user);
+            if (null === $parent) {
+                $errors['parent'] = 'Type parent invalide.';
+            } elseif ($parent === $entity
+                || (null !== $entity->getId() && \in_array($parent->getId(), $this->repo->descendantIds($user, $entity), true))) {
+                $errors['parent'] = 'Un type ne peut pas être son propre parent ni descendant.';
+            } else {
+                $entity->setParent($parent);
+            }
+        }
+
         return $errors;
     }
 
@@ -68,6 +84,8 @@ final class GraineTypeApiController extends AbstractOwnedCrudApiController
             'id' => $entity->getId(),
             'name' => $entity->getName(),
             'code' => $entity->getCode(),
+            'parentId' => $entity->getParent()?->getId(),
+            'parentName' => $entity->getParent()?->getName(),
             'nbGraines' => $nbGraines,
         ];
     }

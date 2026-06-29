@@ -124,22 +124,42 @@ final class GraineApiController extends AbstractOwnedCrudApiController
         return ($n >= 1 && $n <= 12) ? $n : null;
     }
 
+    private const PAGE_SIZE = 20;
+
     #[Route('', name: 'api_graines', methods: ['GET'])]
     public function list(Request $request, #[CurrentUser] Utilisateur $user): JsonResponse
     {
+        $q = trim($request->query->getString('q'));
+        $sort = $request->query->getString('sort', 'code');
+        $dir = $request->query->getString('dir', 'asc');
+        $stockStatus = $request->query->getString('stock'); // '', rachat, faible, ok
+
+        // Type (optionnel, possédé) ; un id non possédé est simplement ignoré.
+        // Le filtre inclut le type ET tous ses descendants (hiérarchie).
+        $graineTypeIds = null;
         $graineTypeId = $request->query->get('graineType');
         if (null !== $graineTypeId && '' !== $graineTypeId) {
             $graineType = $this->resolveOwned($this->graineTypes, $graineTypeId, $user);
-            if (null === $graineType) {
-                return new JsonResponse(['items' => []]);
+            if (null !== $graineType) {
+                $graineTypeIds = $this->graineTypes->descendantIds($user, $graineType);
             }
-
-            return new JsonResponse(\App\Service\Utf8::clean([
-                'items' => array_map(fn ($g) => $this->serialize($g), $this->repo->findByUserAndGraineType($user, $graineType)),
-            ]));
         }
 
-        return $this->doList($user);
+        $total = $this->repo->countByUserFiltered($user, $q, $graineTypeIds, $stockStatus);
+        $pages = max(1, (int) ceil($total / self::PAGE_SIZE));
+        $page = min(max(1, $request->query->getInt('page', 1)), $pages);
+
+        $rows = $this->repo->findByUserFiltered(
+            $user, $q, $graineTypeIds, $stockStatus, $sort, $dir,
+            self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE,
+        );
+
+        return new JsonResponse(\App\Service\Utf8::clean([
+            'items' => array_map(fn (Graine $g) => $this->serialize($g), $rows),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+        ]));
     }
 
     #[Route('/next-code', name: 'api_graine_next_code', methods: ['GET'])]

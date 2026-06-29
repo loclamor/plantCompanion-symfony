@@ -29,6 +29,10 @@ class GraineType implements UserOwnedInterface
     #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
 
+    /** Type parent (optionnel) : hiérarchie auto-référencée (ex. « Pois » → « Pois nain »). */
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    private ?self $parent = null;
+
     public function __toString(): string
     {
         return $this->name ?? '';
@@ -71,6 +75,18 @@ class GraineType implements UserOwnedInterface
     public function setUtilisateur(?Utilisateur $utilisateur): static
     {
         $this->utilisateur = $utilisateur;
+
+        return $this;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): static
+    {
+        $this->parent = $parent;
 
         return $this;
     }

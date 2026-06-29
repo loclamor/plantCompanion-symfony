@@ -1,10 +1,14 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import http from '../../api/http';
+import { flattenGraineTypes } from '../../utils/graineTypeTree';
 
 const items = ref([]);
 const loading = ref(false);
 const error = ref(null);
+
+// Ordonnés en arbre (parent → enfants) avec leur profondeur pour l'indentation.
+const orderedItems = computed(() => flattenGraineTypes(items.value));
 
 async function load() {
     loading.value = true;
@@ -54,8 +58,12 @@ onMounted(load);
             </tr>
         </thead>
         <tbody>
-            <tr v-for="item in items" :key="item.id">
-                <td>{{ item.name }}</td>
+            <tr v-for="item in orderedItems" :key="item.id">
+                <td>
+                    <span :style="{ paddingLeft: item.depth * 1.5 + 'rem' }">
+                        <i v-if="item.depth > 0" class="bi bi-arrow-return-right text-muted me-1"></i>{{ item.name }}
+                    </span>
+                </td>
                 <td><span class="badge text-bg-secondary">{{ item.code }}</span></td>
                 <td class="text-center">{{ item.nbGraines }}</td>
                 <td class="text-end">
